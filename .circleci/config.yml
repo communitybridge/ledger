@@ -1,0 +1,34 @@
+# Copyright The Linux Foundation and each contributor to CommunityBridge.
+# SPDX-License-Identifier: MIT
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.13.1-stretch-node
+    working_directory: /go/src/github.com/communitybridge/ledger/
+    steps:
+      - checkout
+      - run:
+          name: Setup
+          command: |
+            make setup_dev
+      - run:
+          name: Build Swagger
+          command: |
+            make swagger
+      - run:
+          name: Validate Swagger
+          command: |
+            make swagger-validate
+      - run:
+          name: Lint
+          command: |
+            make lint
+      - run:
+          name: Build
+          command: |
+            make build
+      - run:
+          name: Test
+          command: |
+            make test
