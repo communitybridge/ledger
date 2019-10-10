@@ -45,30 +45,30 @@ linters-settings:
     # print struct with more effective memory layout or not, false by default
     suggest-new: true
  
-linters:
-  disable-all: true
-  enable:
-    - golint
-    - govet
-    - errcheck
-    - deadcode
-    - structcheck
-    - varcheck
-    - ineffassign
-    - typecheck
-    - goconst
-    - gocyclo
-    - gofmt
-    - goimports
-    - gosec
-    - megacheck # (staticcheck + gosimple + unused in one linter)
-    - depguard
-    - unconvert
-    - unparam
-    - unused
-    - nakedret
-    - maligned
-    #- dupl
+# linters:
+#   disable-all: true
+#   enable:
+#     - golint
+#     - govet
+#     - errcheck
+#     - deadcode
+#     - structcheck
+#     - varcheck
+#     - ineffassign
+#     - typecheck
+#     - goconst
+#     - gocyclo
+#     - gofmt
+#     - goimports
+#     - gosec
+#     - megacheck # (staticcheck + gosimple + unused in one linter)
+#     - depguard
+#     - unconvert
+#     - unparam
+#     - unused
+#     - nakedret
+#     - maligned
+#     #- dupl
 
 issues:
   exclude-use-default: false
