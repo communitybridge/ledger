@@ -1,0 +1,94 @@
+swagger: '2.0'
+info:
+  version: '0.2'
+  title: Ledger
+  description: API to communicate with the Ledger.
+host: localhost:3000
+basePath: /api
+schemes:
+ - http
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: |
+     For accessing the API a valid JWT token must be passed in all the queries in
+     the 'Authorization' header.
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /health:
+    get:
+      summary: Health
+      operationId: getHealth
+      responses:
+        200:
+          description: 'Success'
+          schema:
+            $ref: '#/definitions/health'
+        400:
+          $ref: '#/responses/invalid-request'
+        404:
+          $ref: '#/responses/not-found'
+      tags:
+        - health
+responses:
+  unauthorized:
+    description: Unauthorized
+    schema:
+      $ref: '#/definitions/error-response'
+  invalid-request:
+    description: Invalid request
+    schema:
+      $ref: '#/definitions/error-response'
+  forbidden:
+    description: Insufficient privilege to execute action.
+    schema:
+      $ref: '#/definitions/error-response'
+  not-found:
+    description: Not found.
+    schema:
+      $ref: '#/definitions/error-response'
+  conflict:
+    description: Duplicate resource
+    schema:
+      $ref: '#/definitions/error-response'
+
+definitions:
+  health:
+    type: object
+    title: Health
+    description: properties for Health
+    properties:
+      DateTime:
+        type: string
+  error-response:
+    type: object
+    title: Error Response
+    description: Standard error format
+    properties:
+      Code:
+        type: string
+      Message:
+        type: string
+        
+parameters:
+  pageSize:
+    name: pageSize
+    in: query
+    type: string
+    default: '100'
+  offset:
+    name: offset
+    in: query
+    type: string
+    default: '0'
+  orderBy:
+    name: orderBy
+    in: query
+    type: string
+    default: 'createddate'
+    pattern: '^[A-Za-z0-9_]+$'
