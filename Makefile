@@ -16,8 +16,6 @@ setup_dev:
 	go get -u golang.org/x/tools/cmd/goimports
 	go get -u github.com/golang/dep/cmd/dep	
 	go get -u github.com/amacneil/dbmate
-	# https://github.com/golangci/golangci-lint#ci-installation
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.18.0
 
 setup_deploy:
 	yarn install --frozen-lockfile
@@ -51,7 +49,7 @@ build: deps
 	chmod +x bin/$(SERVICE)
 
 $(LINT_TOOL):
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.16.0
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.19.0
 
 qc: $(LINT_TOOL)
 	$(LINT_TOOL) run --config=.golangci.yaml ./...
