@@ -49,7 +49,7 @@ build: deps
 	chmod +x bin/$(SERVICE)
 
 $(LINT_TOOL):
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.20.0
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.20.0
 
 qc: $(LINT_TOOL)
 	$(LINT_TOOL) run --config=.golangci.yaml ./...
