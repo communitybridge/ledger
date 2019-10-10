@@ -21,10 +21,6 @@ jobs:
           command: |
             make swagger-validate
       - run:
-          name: Lint
-          command: |
-            make lint
-      - run:
           name: Build
           command: |
             make build
@@ -32,3 +28,7 @@ jobs:
           name: Test
           command: |
             make test
+      - run:
+          name: Lint
+          command: |
+            make lint
