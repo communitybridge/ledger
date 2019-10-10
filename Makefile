@@ -10,6 +10,7 @@ BUILD_TAGS=-tags aws_lambda
 LINT_TOOL=$(shell go env GOPATH)/bin/golangci-lint
 
 setup_dev:
+	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get -u golang.org/x/tools/cmd/goimports
 	go get -u github.com/golang/dep/cmd/dep	
 	go get -u github.com/amacneil/dbmate
