@@ -8,6 +8,8 @@ COMMIT := $(shell sh -c 'git rev-parse --short HEAD')
 LDFLAGS=-ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH) -X main.buildDate=$(BUILD_TIME)"
 BUILD_TAGS=-tags aws_lambda
 LINT_TOOL=$(shell go env GOPATH)/bin/golangci-lint
+GO_PKGS=$(foreach pkg, $(shell go list ./...), $(if $(findstring /vendor/, $(pkg)), , $(pkg)))
+GO_FILES=$(shell find . -type f -name '*.go' -not -path './vendor/*')
 
 setup_dev:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
