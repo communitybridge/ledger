@@ -65,7 +65,7 @@ create table transactions
 
     transaction_category text,
     external_transaction_id text,
-    running_balance decimal NOT NULL,
+    running_balance integer NOT NULL,
     metadata json,
 
     created_at int8 NOT NULL DEFAULT extract(epoch from now()),
@@ -79,7 +79,7 @@ create table line_items
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     transaction_id uuid NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
 
-    amount decimal NOT NULL,
+    amount integer NOT NULL,
     asset_id integer NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
     metadata json,
     
