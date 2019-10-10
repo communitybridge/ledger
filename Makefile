@@ -13,7 +13,6 @@ GO_FILES=$(shell find . -type f -name '*.go' -not -path './vendor/*')
 
 setup_dev:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
-	go get -u golang.org/x/tools/cmd/goimports
 	go get -u github.com/golang/dep/cmd/dep	
 	go get -u github.com/amacneil/dbmate
 
@@ -49,7 +48,7 @@ build: deps
 	chmod +x bin/$(SERVICE)
 
 $(LINT_TOOL):
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.20.0
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.19.0
 
 qc: $(LINT_TOOL)
 	$(LINT_TOOL) run --config=.golangci.yaml ./...
