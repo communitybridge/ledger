@@ -54,6 +54,10 @@
   version = "0.19.5"
 
 [[constraint]]
+  name = "github.com/go-openapi/validate"
+  version = "0.19.3"
+
+[[constraint]]
   name = "github.com/jessevdk/go-flags"
   version = "1.4.0"
 
