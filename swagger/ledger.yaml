@@ -1,20 +1,11 @@
 swagger: '2.0'
 info:
+  title: Ledger API
   version: '0.2'
-  title: Ledger
-  description: API to communicate with the Ledger.
-host: localhost:3000
+  description: Ledger API to view and manipulate Transaction related data.
 basePath: /api
 schemes:
- - http
-securityDefinitions:
-  Bearer:
-    type: apiKey
-    name: Authorization
-    in: header
-    description: |
-     For accessing the API a valid JWT token must be passed in all the queries in
-     the 'Authorization' header.
+  - http
 consumes:
   - application/json
 produces:
@@ -64,9 +55,9 @@ paths:
       summary: List Transactions
       operationId: list_transactions
       parameters:
-        - $ref: '#/parameters/pageSize'
+        - $ref: '#/parameters/page_size'
         - $ref: '#/parameters/offset'
-        - $ref: '#/parameters/orderBy'
+        - $ref: '#/parameters/order_by'
       responses:
         '200':
           description: 'Success'
@@ -97,6 +88,29 @@ paths:
           $ref: '#/responses/invalid-request'
         '409':
           $ref: '#/responses/conflict'
+      tags:
+        - transactions
+        
+  /transactions/{transaction_id}:
+    get:
+      summary: Get Transaction
+      operationId: getTransaction
+      consumes:
+        - application/json
+      parameters:
+        - in: path
+          name: transaction_id
+          type: string
+          required: true
+      responses:
+        '200':
+          description: 'OK'
+          schema:
+            $ref: '#/definitions/transaction'
+        '400':
+          $ref: '#/responses/invalid-request'
+        '404':
+          $ref: '#/responses/not-found'
       tags:
         - transactions
         
@@ -133,9 +147,25 @@ definitions:
         
   transaction-list:
     type: object
+    x-nullable: false
+    title: Transactions
+    description: List of Transactions
     properties:
-      Metadata:
-        $ref: '#/definitions/list-metadata'
+      total_size:
+        type: integer
+        x-omitempty: false
+        format: int64
+      page_size:
+        type: integer
+        x-omitempty: false
+        format: int64
+      offset:
+        type: integer
+        x-omitempty: false
+        format: int64
+      has_next:
+        type: boolean
+        x-omitempty: true
       Data:
         type: array
         items:
@@ -155,7 +185,7 @@ definitions:
         example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
       running_balance:
         type: integer
-        description: Amount of balance in cents. This value can be + or -.
+        description: Sum of transactions for this account until this time in cents. This value can be + or -.
         example: 10000
       transaction_category:
         type: string
@@ -164,7 +194,7 @@ definitions:
         description: ID of this transaction from the external source
         example: txe0e14a-17d
       metadata:
-        type: string
+        type: object
         description: json formatted string holding dynamic data
         example: {note: lorem ipsum}
       created_at:
@@ -181,7 +211,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/line-item'
-
+        
   line-item:
     type: object
     properties:
@@ -203,7 +233,7 @@ definitions:
         example: 7fa530ed-10cc-452b-8aef-632bb33e7367
         description: UUID fk to the asset table
       metadata:
-        type: string
+        type: object
         description: json formatted string holding dynamic data
         example: {note: lorem ipsum}
       created_at:
@@ -251,13 +281,17 @@ definitions:
         example: 7fa530ed-10cc-452b-8aef-632bb33e7367
         description: UUID fk to the asset table
       metadata:
-        type: string
+        type: object
         description: json formatted string holding dynamic data
         example: {note: lorem ipsum}
 
-  sub_category:
+  sub-category:
     type: object
     properties:
+      name: 
+        type: string
+        description: Category name
+        example: Lorem
       balance:
         type: integer
         description: Amount in cents.
@@ -340,29 +374,10 @@ definitions:
         example:
           min:
             value: 0
-      subTotals:
-        properties:
-          categories:
-            type: array
-            items:
-              $ref: '#/definitions/transaction'
-
-  list-metadata:
-    type: object
-    title: List Metadata
-    properties:
-      TotalSize:
-        type: integer
-        x-omitempty: false
-        format: int64
-      PageSize:
-        type: integer
-        x-omitempty: false
-        format: int64
-      Offset:
-        type: integer
-        x-omitempty: false
-        format: int64
+      sub_totals:
+        type: array
+        items:
+          $ref: '#/definitions/sub-category'
         
   error-response:
     type: object
@@ -375,8 +390,8 @@ definitions:
         type: string
         
 parameters:
-  pageSize:
-    name: pageSize
+  page_size:
+    name: page_size
     in: query
     type: string
     default: '100'
@@ -385,8 +400,8 @@ parameters:
     in: query
     type: string
     default: '0'
-  orderBy:
-    name: orderBy
+  order_by:
+    name: order_by
     in: query
     type: string
     default: 'createddate'

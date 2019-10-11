@@ -9,7 +9,9 @@ import (
 	"github.com/communitybridge/ledger/gen/restapi"
 	"github.com/communitybridge/ledger/gen/restapi/operations"
 	"github.com/communitybridge/ledger/health"
+	"github.com/communitybridge/ledger/transaction"
 	"github.com/go-openapi/loads"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 
 	"github.com/sirupsen/logrus"
@@ -22,6 +24,19 @@ var (
 	// GitHash is the tag for current hash the build represents
 	GitHash = "None"
 )
+
+// initDB
+func initDB() (*sqlx.DB, error) {
+	log.Println("Initializing DB")
+
+	db, err := sqlx.Connect("postgres", os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatal("err", err)
+	}
+	db.SetMaxOpenConns(2)
+
+	return db, nil
+}
 
 func main() {
 
@@ -49,6 +64,12 @@ func main() {
 		viperConfig.SetDefault(key, value)
 	}
 
+	// DB setup
+	pDB, err := initDB()
+	if err != nil {
+		log.Fatal("couldn't connect to database", err)
+	}
+
 	// loads generated Swagger API specifications
 	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
 	if err != nil {
@@ -59,6 +80,11 @@ func main() {
 	// Health setup
 	healthService := health.New()
 	health.Configure(api, healthService)
+
+	// Transactions package endpoints
+	transactionRepo := transaction.NewRepository(pDB)
+	transactionService := transaction.NewService(transactionRepo)
+	transaction.Configure(api, transactionService)
 
 	var portFlag = flag.Int("port", viperConfig.GetInt("PORT"), "Port to listen for web requests on")
 	flag.Parse()

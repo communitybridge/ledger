@@ -1,7 +1,10 @@
 package swagger
 
 import (
+	"errors"
+
 	"github.com/communitybridge/ledger/gen/restapi/operations/health"
+	"github.com/communitybridge/ledger/gen/restapi/operations/transactions"
 
 	"github.com/sirupsen/logrus"
 
@@ -27,10 +30,27 @@ func ErrorResponse(err error) *models.ErrorResponse {
 	return &e
 }
 
+var (
+	ErrNotFound         = errors.New("not found")
+	ErrNotValidCurrency = errors.New("asset not valid")
+	ErrInvalid          = errors.New("invalid request")
+	ErrDuplicate        = errors.New("duplicate resource")
+)
+
 // HealthErrorHandler handles error resp from calls to the health endpoint
 func HealthErrorHandler(label string, err error) middleware.Responder {
 	logrus.WithError(err).Error(label)
 
 	return health.NewGetHealthBadRequest()
 
+}
+
+// TransactionErrorHandler handles
+func TransactionErrorHandler(label string, err error) middleware.Responder {
+	switch err.Error() {
+	case ErrDuplicate.Error():
+		return transactions.NewCreateTransactionConflict().WithPayload(ErrorResponse(err))
+	default:
+		return transactions.NewListTransactionsBadRequest()
+	}
 }
