@@ -24,7 +24,7 @@ setup: setup_dev setup_deploy
 clean:
 	rm -rf ./gen ./bin
 
-swagger-validate:
+validate:
 	swagger validate swagger/$(SERVICE).yaml
 
 swagger: clean

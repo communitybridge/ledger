@@ -4,7 +4,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.13.1-stretch-node
+      - image: circleci/golang:1.12.10-buster-node
     working_directory: /go/src/github.com/communitybridge/ledger/
     steps:
       - checkout
