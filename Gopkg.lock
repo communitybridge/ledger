@@ -382,6 +382,7 @@
     "github.com/go-openapi/spec",
     "github.com/go-openapi/strfmt",
     "github.com/go-openapi/swag",
+    "github.com/go-openapi/validate",
     "github.com/jessevdk/go-flags",
     "github.com/lib/pq",
     "github.com/sirupsen/logrus",
