@@ -342,25 +342,11 @@ definitions:
             value: 0
       subTotals:
         properties:
-          BugBounty:
-            $ref: '#/definitions/sub_category'
-          Development:
-            $ref: '#/definitions/sub_category'
-          Documentation:
-            $ref: '#/definitions/sub_category'
-          Marketing:
-            $ref: '#/definitions/sub_category'
-          Meetups:
-            $ref: '#/definitions/sub_category'
-          Mentee:
-            $ref: '#/definitions/sub_category'
-          Travel:
-            $ref: '#/definitions/sub_category'
-          Other:
-            $ref: '#/definitions/sub_category'
-          Uncategorised:
-            $ref: '#/definitions/sub_category'
-            
+          categories:
+            type: array
+            items:
+              $ref: '#/definitions/transaction'
+
   list-metadata:
     type: object
     title: List Metadata
