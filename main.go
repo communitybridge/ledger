@@ -32,6 +32,7 @@ func initDB() (*sqlx.DB, error) {
 	db, err := sqlx.Connect("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal("err", err)
+		return nil, err
 	}
 	db.SetMaxOpenConns(2)
 

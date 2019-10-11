@@ -14,6 +14,7 @@ import (
 	log "github.com/communitybridge/ledger/logging"
 )
 
+// Repository interface for repo calls
 type Repository interface {
 	ListTransactions(ctx context.Context, params *transactions.ListTransactionsParams) ([]*models.Transaction, error)
 	CreateTransaction(ctx context.Context, params *models.CreateTransaction) (*models.Transaction, error)
@@ -24,6 +25,7 @@ type repository struct {
 	db *sqlx.DB
 }
 
+// NewRepository ...
 func NewRepository(db *sqlx.DB) Repository {
 	return &repository{
 		db: db,

@@ -9,6 +9,7 @@ import (
 	"github.com/communitybridge/ledger/gen/restapi/operations/transactions"
 )
 
+// Service ...
 type Service interface {
 	ListTransactions(ctx context.Context, params *transactions.ListTransactionsParams) (*models.TransactionList, error)
 	CreateTransaction(ctx context.Context, params *transactions.CreateTransactionParams) (*models.Transaction, error)

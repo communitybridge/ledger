@@ -31,10 +31,14 @@ func ErrorResponse(err error) *models.ErrorResponse {
 }
 
 var (
-	ErrNotFound         = errors.New("not found")
-	ErrNotValidCurrency = errors.New("asset not valid")
-	ErrInvalid          = errors.New("invalid request")
-	ErrDuplicate        = errors.New("duplicate resource")
+	// ErrNotFound obj not found err
+	ErrNotFound = errors.New("not found")
+	// ErrNotValidAsset invalid asset specified
+	ErrNotValidAsset = errors.New("asset not valid")
+	// ErrInvalid request
+	ErrInvalid = errors.New("invalid request")
+	// ErrDuplicate duplicate error
+	ErrDuplicate = errors.New("duplicate resource")
 )
 
 // HealthErrorHandler handles error resp from calls to the health endpoint
