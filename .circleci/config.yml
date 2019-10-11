@@ -19,7 +19,7 @@ jobs:
       - run:
           name: Validate Swagger
           command: |
-            make swagger-validate
+            make validate
       - run:
           name: Build
           command: |
