@@ -20,7 +20,6 @@ database migration tool.
 ![Schema Diagram](assets/images/schema.png)
 
 ## API Endpoints
-
 API endpoints live at /api/docs 
 
 ## Database Migration
