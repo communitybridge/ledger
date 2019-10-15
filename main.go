@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/communitybridge/ledger/balance"
+
 	"github.com/communitybridge/ledger/cmd"
 	"github.com/communitybridge/ledger/gen/restapi"
 	"github.com/communitybridge/ledger/gen/restapi/operations"
@@ -86,6 +88,11 @@ func main() {
 	transactionRepo := transaction.NewRepository(pDB)
 	transactionService := transaction.NewService(transactionRepo)
 	transaction.Configure(api, transactionService)
+
+	// Balance package endpoints
+	balanceRepo := balance.NewRepository(pDB)
+	balanceService := balance.NewService(balanceRepo)
+	balance.Configure(api, balanceService)
 
 	var portFlag = flag.Int("port", viperConfig.GetInt("PORT"), "Port to listen for web requests on")
 	flag.Parse()

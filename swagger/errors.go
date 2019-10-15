@@ -3,9 +3,9 @@ package swagger
 import (
 	"errors"
 
+	"github.com/communitybridge/ledger/gen/restapi/operations/balance"
 	"github.com/communitybridge/ledger/gen/restapi/operations/health"
 	"github.com/communitybridge/ledger/gen/restapi/operations/transactions"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/communitybridge/ledger/gen/models"
@@ -31,6 +31,8 @@ func ErrorResponse(err error) *models.ErrorResponse {
 }
 
 var (
+	// ErrEmptyResult no results found for query params err
+	ErrEmptyResult = errors.New("no results found")
 	// ErrNotFound obj not found err
 	ErrNotFound = errors.New("not found")
 	// ErrNotValidAsset invalid asset specified
@@ -56,5 +58,17 @@ func TransactionErrorHandler(label string, err error) middleware.Responder {
 		return transactions.NewCreateTransactionConflict().WithPayload(ErrorResponse(err))
 	default:
 		return transactions.NewListTransactionsBadRequest()
+	}
+}
+
+// BalanceErrorHandler handles
+func BalanceErrorHandler(label string, err error) middleware.Responder {
+	switch err.Error() {
+	case ErrNotFound.Error():
+		return balance.NewGetBalanceNotFound().WithPayload(ErrorResponse(err))
+	case ErrEmptyResult.Error():
+		return balance.NewGetBalanceNotFound().WithPayload(ErrorResponse(err))
+	default:
+		return balance.NewGetBalanceBadRequest()
 	}
 }

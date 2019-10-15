@@ -46,7 +46,7 @@ create table entities
 (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     entity_id uuid NOT NULL,
-    source_type source_type_enum NOT NULL,
+    entity_type entity_type_enum NOT NULL,
     account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     metadata json,
 
@@ -54,7 +54,7 @@ create table entities
     updated_at int8 NOT NULL DEFAULT extract(epoch from now()),
 
     PRIMARY KEY(id),
-    UNIQUE (entity_id, source_type, account_id)
+    UNIQUE (entity_id, entity_type, account_id)
 );
 
 create table transactions

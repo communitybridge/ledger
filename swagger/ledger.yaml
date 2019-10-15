@@ -27,7 +27,7 @@ paths:
       tags:
         - health
         
-  /balance/{project_id}:
+  /balance/{entity_id}:
     get:
       summary: Get Balance
       operationId: get_balance
@@ -35,9 +35,20 @@ paths:
         - application/json
       parameters:
         - in: path
-          name: project_id
+          name: entity_id
+          description: UUID of the entity (User, Project, Organisation)
           type: string
           required: true
+        - name: start_date
+          in: query
+          type: integer
+          description: date-time in epoch (seconds)
+          required: false
+        - name: end_date
+          in: query
+          type: integer
+          description: date-time in epoch (seconds)
+          required: false
       responses:
         '200':
           description: 'OK'
@@ -326,10 +337,14 @@ definitions:
   balance:
     type: object
     properties:
-      project_id:
+      entity_id:
         type: string
-        description: UUID of the project.
+        description: UUID of the entity.
         example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      entity_type:
+        type: string
+        enum: [user, project, organisation]
+        example: project
       total_balance:
         type: integer
         description: Amount in cents.

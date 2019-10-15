@@ -130,11 +130,7 @@ func getTransactionLineItems(repo *repository, transactionID string) ([]*models.
 func (repo *repository) GetTransactionCount(ctx context.Context) (int64, error) {
 	log.Info("entered function GetTransactionCount")
 
-	sql := `
-		SELECT
-			count(*)
-		FROM
-			transactions t;`
+	sql := `SELECT count(*) FROM transactions t;`
 
 	log.Info(log.StripSpecialChars(sql))
 

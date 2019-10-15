@@ -117,7 +117,7 @@ ALTER SEQUENCE public.assets_id_seq OWNED BY public.assets.id;
 CREATE TABLE public.entities (
     id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     entity_id uuid NOT NULL,
-    source_type public.source_type_enum NOT NULL,
+    entity_type public.entity_type_enum NOT NULL,
     account_id uuid NOT NULL,
     metadata json,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
@@ -205,11 +205,11 @@ ALTER TABLE ONLY public.assets
 
 
 --
--- Name: entities entities_entity_id_source_type_account_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: entities entities_entity_id_entity_type_account_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.entities
-    ADD CONSTRAINT entities_entity_id_source_type_account_id_key UNIQUE (entity_id, source_type, account_id);
+    ADD CONSTRAINT entities_entity_id_entity_type_account_id_key UNIQUE (entity_id, entity_type, account_id);
 
 
 --
