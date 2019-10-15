@@ -393,13 +393,15 @@ parameters:
   page_size:
     name: page_size
     in: query
-    type: string
-    default: '100'
+    type: integer
+    default: 10
+    minimum: 1
+    maximum: 100
   offset:
     name: offset
     in: query
-    type: string
-    default: '0'
+    type: integer
+    default: 0
   order_by:
     name: order_by
     in: query

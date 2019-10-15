@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"context"
-	"strconv"
 
 	log "github.com/communitybridge/ledger/logging"
 
@@ -50,11 +49,8 @@ func (s *service) ListTransactions(ctx context.Context, params *transactions.Lis
 	transactionList.TotalSize = totalTransactions
 
 	// Return Offset
-	offset, err := strconv.ParseInt(*params.Offset, 10, 64)
-	if err != nil {
-		log.Error("could not parse offset string to int64 ", err)
-	}
-	transactionList.Offset = int64(offset)
+	offset := *params.Offset
+	transactionList.Offset = offset
 
 	// Calculate if we have more results
 	transactionList.HasNext = false

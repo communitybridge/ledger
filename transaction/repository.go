@@ -3,7 +3,6 @@ package transaction
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/communitybridge/ledger/gen/models"
 	"github.com/communitybridge/ledger/gen/restapi/operations/transactions"
@@ -153,17 +152,8 @@ func (repo *repository) GetTransactionCount(ctx context.Context) (int64, error) 
 func (repo *repository) ListTransactions(ctx context.Context, params *transactions.ListTransactionsParams) ([]*models.Transaction, error) {
 	log.Info("entered function ListTransactions")
 
-	pagesize, err := strconv.Atoi(*params.PageSize)
-	if err != nil {
-		log.Fatal(log.Trace(), err)
-		return nil, errors.Wrap(err, "ListTransactions.convertPageSize")
-	}
-
-	offset, err := strconv.Atoi(*params.Offset)
-	if err != nil {
-		log.Error(log.Trace(), err)
-		return nil, errors.Wrap(err, "ListTransactions.convertOffset")
-	}
+	pagesize := *params.PageSize
+	offset := *params.Offset
 
 	sql := `
 		SELECT
