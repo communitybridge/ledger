@@ -17,6 +17,7 @@ import (
 // Repository interface for repo calls
 type Repository interface {
 	ListTransactions(ctx context.Context, params *transactions.ListTransactionsParams) ([]*models.Transaction, error)
+	GetTransactionCount(ctx context.Context) (int64, error)
 	CreateTransaction(ctx context.Context, params *models.CreateTransaction) (*models.Transaction, error)
 	GetTransaction(ctx context.Context, transactionID string) (*models.Transaction, error)
 }
@@ -124,6 +125,28 @@ func getTransactionLineItems(repo *repository, transactionID string) ([]*models.
 	}
 
 	return lineItems, nil
+}
+
+// GetTransactionCount is a function to get a count of available transactions
+func (repo *repository) GetTransactionCount(ctx context.Context) (int64, error) {
+	log.Info("entered function GetTransactionCount")
+
+	sql := `
+		SELECT
+			count(*)
+		FROM
+			transactions t;`
+
+	log.Info(log.StripSpecialChars(sql))
+
+	row := repo.db.QueryRow(sql)
+	var count int64
+	err := row.Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 // ListTransactions is a function to get a list of transactions

@@ -17,6 +17,6 @@ database migration tool.
 Please see [database doc](db/README.md).
 
 ## Swagger
-Documentation is available at `/api-docs`.
+Documentation is available at `/api/docs`.
 
 Also see [swagger doc](swagger/ledger.yaml).

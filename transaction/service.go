@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+	"strconv"
 
 	log "github.com/communitybridge/ledger/logging"
 
@@ -38,8 +39,28 @@ func (s *service) ListTransactions(ctx context.Context, params *transactions.Lis
 	}
 
 	transactionList := models.TransactionList{}
-	transactionList.TotalSize = int64(len(transactions))
 	transactionList.PageSize = int64(len(transactions))
+
+	// Get count of total transaction records
+	totalTransactions, err := s.repo.GetTransactionCount(ctx)
+	if err != nil {
+		log.Error(log.Trace(), err)
+		return nil, err
+	}
+	transactionList.TotalSize = totalTransactions
+
+	// Return Offset
+	offset, err := strconv.ParseInt(*params.Offset, 10, 64)
+	if err != nil {
+		log.Error("could not parse offset string to int64 ", err)
+	}
+	transactionList.Offset = int64(offset)
+
+	// Calculate if we have more results
+	transactionList.HasNext = false
+	if transactionList.TotalSize > (offset + transactionList.PageSize) {
+		transactionList.HasNext = true
+	}
 
 	transactionList.Data = transactions
 
