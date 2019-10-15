@@ -102,7 +102,7 @@ func getTransactionLineItems(repo *repository, transactionID string) ([]*models.
 		WHERE
 			l.transaction_id = $1;`
 
-	log.Info(fmt.Sprintf(log.StripSpecialChars(sql)))
+	log.Info(log.StripSpecialChars(sql))
 
 	rows, err := repo.db.Queryx(sql, transactionID)
 	if err != nil {
