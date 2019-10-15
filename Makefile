@@ -29,7 +29,7 @@ validate:
 
 swagger: clean
 	mkdir gen
-	swagger -q generate server -t gen -f swagger/$(SERVICE).yaml --exclude-main -A $(SERVICE)
+	swagger -q generate server -t gen -f swagger/$(SERVICE).yaml --exclude-main -A $(SERVICE) --keep-spec-order
 
 up:
 	dbmate up

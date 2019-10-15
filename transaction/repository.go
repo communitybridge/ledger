@@ -71,7 +71,7 @@ func DoesTransactionExist(repo *repository, id string) (bool, string) {
 	log.Info("entered function DoesTransactionExist")
 
 	var res = ""
-	err := repo.db.Get(&res, "SELECT id FROM t Wransactions WHERE id=$1", id)
+	err := repo.db.Get(&res, "SELECT id FROM transactions WHERE id=$1", id)
 	if err != nil {
 		err = fmt.Errorf("transaction with id : `%s` does not exist", id)
 		log.Info(err.Error())
@@ -79,6 +79,51 @@ func DoesTransactionExist(repo *repository, id string) (bool, string) {
 	}
 
 	return true, res
+}
+
+// getTransactionLineItems returns party data from required tables
+func getTransactionLineItems(repo *repository, transactionID string) ([]*models.LineItem, error) {
+
+	if transactionID == "" {
+		err := fmt.Errorf("account id is empty")
+		return []*models.LineItem{}, err
+	}
+
+	sql := `
+		SELECT
+			l.id AS ID,
+			l.amount AS Amount,
+			l.asset_id AS AssetID,
+			l.metadata AS Metadata,
+			l.created_at AS CreatedAt,
+			l.updated_at AS UpdatedAt
+		FROM
+			line_items l
+		WHERE
+			l.transaction_id = $1;`
+
+	log.Info(fmt.Sprintf(log.StripSpecialChars(sql)))
+
+	rows, err := repo.db.Queryx(sql, transactionID)
+	if err != nil {
+		log.Error(err.Error(), err)
+		return nil, err
+	}
+
+	lineItems := []*models.LineItem{}
+	for rows.Next() {
+
+		lineItem := &models.LineItem{}
+		err := rows.StructScan(&lineItem)
+		if err != nil {
+			log.Error(err.Error(), err)
+			return nil, err
+		}
+
+		lineItems = append(lineItems, lineItem)
+	}
+
+	return lineItems, nil
 }
 
 // ListTransactions is a function to get a list of transactions
@@ -99,9 +144,16 @@ func (repo *repository) ListTransactions(ctx context.Context, params *transactio
 
 	sql := `
 		SELECT
-			t.id AS ID
+			t.id AS ID,
+			t.account_id AS AccountID,
+			t.external_transaction_id AS ExternalTransactionID,
+			t.metadata AS Metadata,
+			t.running_balance AS RunningBalance,
+			t.transaction_category AS TransactionCategory,
+			t.created_at AS CreatedAt,
+			t.updated_at AS UpdatedAt
 		FROM
-			transaction t
+			transactions t
 		limit $1
 		offset $2;`
 
@@ -119,14 +171,26 @@ func (repo *repository) ListTransactions(ctx context.Context, params *transactio
 	for rows.Next() {
 
 		transaction := &models.Transaction{}
-
 		if err := rows.Scan(
 			&transaction.ID,
+			&transaction.AccountID,
+			&transaction.ExternalTransactionID,
+			&transaction.Metadata,
+			&transaction.RunningBalance,
+			&transaction.TransactionCategory,
+			&transaction.CreatedAt,
+			&transaction.UpdatedAt,
 		); err != nil {
-
 			log.Error(err.Error(), err)
 			return nil, err
 		}
+
+		lineItems, err := getTransactionLineItems(repo, transaction.ID)
+		if err != nil {
+			log.Error(err.Error(), err)
+			return nil, err
+		}
+		transaction.LineItems = lineItems
 
 		transactions = append(transactions, transaction)
 	}
@@ -144,26 +208,39 @@ func (repo *repository) GetTransaction(ctx context.Context, transactionID string
 	}
 
 	sql := `
-	SELECT
-		t.id AS ID
-	FROM
-		transaction t
-	WHERE
-		id = $1;`
+		SELECT
+			t.id AS ID,
+			t.account_id AS AccountID,
+			t.external_transaction_id AS ExternalTransactionID,
+			t.metadata AS Metadata,
+			t.running_balance AS RunningBalance,
+			t.transaction_category AS TransactionCategory,
+			t.created_at AS CreatedAt,
+			t.updated_at AS UpdatedAt
+		FROM
+			transactions t
+		WHERE
+			id = $1;`
 
 	log.Info(log.StripSpecialChars(sql))
 
-	row := repo.db.QueryRow(sql, transactionID)
+	row := repo.db.QueryRowx(sql, transactionID)
 
-	transaction := &models.Transaction{}
-	if err := row.Scan(
-		&transaction.ID,
-	); err != nil {
+	transaction := models.Transaction{}
+	err := row.StructScan(&transaction)
+	if err != nil {
 		log.Error(err.Error(), err)
 		return nil, err
 	}
 
-	return transaction, nil
+	lineItems, err := getTransactionLineItems(repo, transaction.ID)
+	if err != nil {
+		log.Error(err.Error(), err)
+		return nil, err
+	}
+	transaction.LineItems = lineItems
+
+	return &transaction, nil
 }
 
 // CreateTransaction creates a new transaction and any related rows

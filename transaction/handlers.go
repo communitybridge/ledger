@@ -33,6 +33,21 @@ func Configure(api *operations.LedgerAPI, service Service) {
 		return transactions.NewListTransactionsOK().WithPayload(result)
 	})
 
+	api.TransactionsGetTransactionHandler = transactions.GetTransactionHandlerFunc(func(params transactions.GetTransactionParams) middleware.Responder {
+		log.Info("entering TransactionsGetTransactionHandler")
+
+		log.WithFields(logrus.Fields{
+			"HttpRequest":   fmt.Sprintf("%#v", *params.HTTPRequest),
+			"TransactionID": params.TransactionID,
+		}).Info("GetTransactionHandlerFunc")
+
+		result, err := service.GetTransaction(params.HTTPRequest.Context(), &params)
+		if err != nil {
+			return swagger.TransactionErrorHandler("GetTransaction", err)
+		}
+		return transactions.NewGetTransactionOK().WithPayload(result)
+	})
+
 	api.TransactionsCreateTransactionHandler = transactions.CreateTransactionHandlerFunc(func(params transactions.CreateTransactionParams) middleware.Responder {
 		log.Info("entering transactionsCreateTransactionHandler")
 
