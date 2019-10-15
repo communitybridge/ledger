@@ -1,6 +1,6 @@
 ## Database Schema
 
-![Schema Diagram](assets/images/schema.png)
+![Schema Diagram](../assets/images/schema.png)
 
 ## Database Migration
 Create Database;
