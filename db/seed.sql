@@ -18,7 +18,7 @@ COPY public.accounts (id, external_source_type, external_account_id, created_at,
 \.
 
 --
--- Data for Name: payments; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: transactions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.transactions (id, account_id, transaction_category, external_transaction_id, running_balance, created_at, updated_at) FROM stdin;
