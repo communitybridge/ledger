@@ -292,6 +292,10 @@ definitions:
   balance:
     type: object
     properties:
+      name: 
+        type: string
+        description: Category name
+        example: Lorem
       project_id:
         type: string
         description: UUID of the project.
