@@ -132,7 +132,7 @@ CREATE TABLE public.entities (
 CREATE TABLE public.line_items (
     id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     transaction_id uuid NOT NULL,
-    amount numeric NOT NULL,
+    amount integer NOT NULL,
     asset_id integer NOT NULL,
     metadata json,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
@@ -158,7 +158,7 @@ CREATE TABLE public.transactions (
     account_id uuid NOT NULL,
     transaction_category text,
     external_transaction_id text,
-    running_balance numeric NOT NULL,
+    running_balance integer NOT NULL,
     metadata json,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
     updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL

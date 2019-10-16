@@ -323,15 +323,15 @@
     "netutil",
   ]
   pruneopts = "UT"
-  revision = "72f939374954d0a1b2a1e27dcda950e2724dd5c1"
+  revision = "d66e71096ffb9f08f36d9aefcae80ce319de6d68"
 
 [[projects]]
   branch = "master"
-  digest = "1:3e7ac264ca261c2d429880bfd6c3121c36a0f12b6a050d8a747aa29f6f6b2be0"
+  digest = "1:7c927f17d868be652a4cfe7de23e4292dea5b14d974a1d536e3b7cb7e79fd695"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "543471e840be449c53d44b32c7adf1261ad67e37"
+  revision = "b09406accb4736d857a32bf9444cd7edae2ffa79"
 
 [[projects]]
   digest = "1:66a2f252a58b4fbbad0e4e180e1d85a83c222b6bce09c3dcdef3dc87c72eda7c"
@@ -382,6 +382,7 @@
     "github.com/go-openapi/spec",
     "github.com/go-openapi/strfmt",
     "github.com/go-openapi/swag",
+    "github.com/go-openapi/validate",
     "github.com/jessevdk/go-flags",
     "github.com/lib/pq",
     "github.com/sirupsen/logrus",

@@ -23,7 +23,7 @@ paths:
   /health:
     get:
       summary: Health
-      operationId: getHealth
+      operationId: get_health
       responses:
         200:
           description: 'Success'
@@ -35,6 +35,71 @@ paths:
           $ref: '#/responses/not-found'
       tags:
         - health
+        
+  /balance/{project_id}:
+    get:
+      summary: Get Balance
+      operationId: get_balance
+      consumes:
+        - application/json
+      parameters:
+        - in: path
+          name: project_id
+          type: string
+          required: true
+      responses:
+        '200':
+          description: 'OK'
+          schema:
+            $ref: '#/definitions/balance'
+        '400':
+          $ref: '#/responses/invalid-request'
+        '404':
+          $ref: '#/responses/not-found'
+      tags:
+        - balance
+        
+  /transactions:
+    get:
+      summary: List Transactions
+      operationId: list_transactions
+      parameters:
+        - $ref: '#/parameters/pageSize'
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/orderBy'
+      responses:
+        '200':
+          description: 'Success'
+          schema:
+            $ref: '#/definitions/transaction-list'
+        '400':
+          $ref: '#/responses/invalid-request'
+      tags:
+        - transactions
+    post:
+      summary: Add a new Transaction
+      operationId: create_transaction
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          description: The transaction to create
+          name: transaction
+          required: true
+          schema:
+            $ref: '#/definitions/create-transaction'
+      responses:
+        '201':
+          description: 'Created'
+          schema:
+            $ref: '#/definitions/transaction'
+        '400':
+          $ref: '#/responses/invalid-request'
+        '409':
+          $ref: '#/responses/conflict'
+      tags:
+        - transactions
+        
 responses:
   unauthorized:
     description: Unauthorized
@@ -65,6 +130,244 @@ definitions:
     properties:
       DateTime:
         type: string
+        
+  transaction-list:
+    type: object
+    properties:
+      Metadata:
+        $ref: '#/definitions/list-metadata'
+      Data:
+        type: array
+        items:
+          $ref: '#/definitions/transaction'
+          
+  transaction:
+    type: object
+    properties:
+      id:
+        type: string
+        description: UUID of the line_item.
+        readOnly: true
+        example: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+      account_id:
+        type: string
+        description: UUID of the associated account.
+        example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      running_balance:
+        type: integer
+        description: Amount of balance in cents. This value can be + or -.
+        example: 10000
+      transaction_category:
+        type: string
+      external_transaction_id:
+        type: string
+        description: ID of this transaction from the external source
+        example: txe0e14a-17d
+      metadata:
+        type: string
+        description: json formatted string holding dynamic data
+        example: {note: lorem ipsum}
+      created_at:
+        type: integer
+        description: date-time in epoch (seconds)
+        readOnly: true
+        example: 1539815989
+      updated_at:
+        type: integer
+        description: date-time in epoch (seconds)
+        readOnly: true
+        example: 1539815989
+      line_items:
+        type: array
+        items:
+          $ref: '#/definitions/line-item'
+
+  line-item:
+    type: object
+    properties:
+      id:
+        type: string
+        description: UUID of the line_item.
+        readOnly: true
+        example: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+      transaction_id:
+        type: string
+        description: UUID of the transaction.
+        example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      amount:
+        type: integer
+        description: Amount of transaction in cents. This value can be + or -.
+        example: 10000
+      asset_id:
+        type: string
+        example: 7fa530ed-10cc-452b-8aef-632bb33e7367
+        description: UUID fk to the asset table
+      metadata:
+        type: string
+        description: json formatted string holding dynamic data
+        example: {note: lorem ipsum}
+      created_at:
+        type: integer
+        description: date-time in epoch (seconds)
+        readOnly: true
+        example: 1539815989
+      updated_at:
+        type: integer
+        description: date-time in epoch (seconds)
+        readOnly: true
+        example: 1539815989
+        
+  create-transaction:
+    type: object
+    properties:
+      account_id:
+        type: string
+        description: UUID of the associated account.
+        example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      transaction_category:
+        type: string
+      external_transaction_id:
+        type: string
+        description: ID of this transaction from the external source
+        example: txe0e14a-17d
+      metadata:
+        type: string
+        description: json formatted string holding dynamic data
+        example: {note: lorem ipsum}
+      line_items:
+        type: array
+        items:
+          $ref: '#/definitions/create-line-item'
+          
+  create-line-item:
+    type: object
+    properties:
+      amount:
+        type: integer
+        description: Amount of transaction in cents. This value can be + or -.
+        example: 10000
+      asset_id:
+        type: string
+        example: 7fa530ed-10cc-452b-8aef-632bb33e7367
+        description: UUID fk to the asset table
+      metadata:
+        type: string
+        description: json formatted string holding dynamic data
+        example: {note: lorem ipsum}
+
+  sub_category:
+    type: object
+    properties:
+      balance:
+        type: integer
+        description: Amount in cents.
+        example: -66534
+      count:
+        type: integer
+        description: Number of transactions in this category.
+        example:
+          min:
+            value: 0
+      credit:
+        type: integer
+        description: Total credit amount.
+        example: 7
+      credit_count:
+        type: integer
+        description: Number of credit transactions
+        example:
+          min:
+            value: 0
+      debit:
+        type: integer
+        description: Total debit amount.
+        example: -454921
+      debit_count:
+        type: integer
+        description: Number of debit transactions
+        example:
+          min:
+            value: 0
+            
+  balance:
+    type: object
+    properties:
+      name: 
+        type: string
+        description: Category name
+        example: Lorem
+      project_id:
+        type: string
+        description: UUID of the project.
+        example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      total_balance:
+        type: integer
+        description: Amount in cents.
+        example: 1503428
+      available_balance:
+        type: integer
+        description: Available balance for the project. totalBalance - feeBalance.
+        example: 1488394
+      fee_balance:
+        type: integer
+        description: Total unpaid fees.
+        example: 15034
+      total_credit:
+        type: integer
+        description: Total credit to project.
+        example: 2503428
+      total_debit:
+        type: integer
+        description: Total debit from project.
+        example: -1000000
+      total_count:
+        type: integer
+        description: Credit transaction count.
+        example:
+          min:
+            value: 0
+      credit_count:
+        type: integer
+        description: Credit transaction count.
+        example:
+          min:
+            value: 0
+      debit_count:
+        type: integer
+        description: Debit transaction count.
+        example:
+          min:
+            value: 0
+      backers:
+        type: integer
+        description: Total backers for the project.
+        example:
+          min:
+            value: 0
+      subTotals:
+        properties:
+          categories:
+            type: array
+            items:
+              $ref: '#/definitions/transaction'
+
+  list-metadata:
+    type: object
+    title: List Metadata
+    properties:
+      TotalSize:
+        type: integer
+        x-omitempty: false
+        format: int64
+      PageSize:
+        type: integer
+        x-omitempty: false
+        format: int64
+      Offset:
+        type: integer
+        x-omitempty: false
+        format: int64
+        
   error-response:
     type: object
     title: Error Response

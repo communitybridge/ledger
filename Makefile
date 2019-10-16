@@ -8,11 +8,13 @@ COMMIT := $(shell sh -c 'git rev-parse --short HEAD')
 LDFLAGS=-ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH) -X main.buildDate=$(BUILD_TIME)"
 BUILD_TAGS=-tags aws_lambda
 LINT_TOOL=$(shell go env GOPATH)/bin/golangci-lint
+GO_PKGS=$(shell go list ./... | grep -v /vendor/ | grep -v /node_modules/)
+GO_FILES=$(shell find . -type f -name '*.go' -not -path './vendor/*')
 
 setup_dev:
-	go get -u github.com/go-swagger/go-swagger/
-	# https://github.com/golangci/golangci-lint#ci-installation
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.18.0
+	go get -u github.com/go-swagger/go-swagger/cmd/swagger
+	go get -u github.com/golang/dep/cmd/dep	
+	go get -u github.com/amacneil/dbmate
 
 setup_deploy:
 	yarn install --frozen-lockfile
@@ -22,7 +24,7 @@ setup: setup_dev setup_deploy
 clean:
 	rm -rf ./gen ./bin
 
-swagger-validate:
+validate:
 	swagger validate swagger/$(SERVICE).yaml
 
 swagger: clean
@@ -46,7 +48,7 @@ build: deps
 	chmod +x bin/$(SERVICE)
 
 $(LINT_TOOL):
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.16.0
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.19.0
 
 qc: $(LINT_TOOL)
 	$(LINT_TOOL) run --config=.golangci.yaml ./...
