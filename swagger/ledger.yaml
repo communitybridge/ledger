@@ -235,6 +235,10 @@ definitions:
         type: string
         description: UUID of the transaction.
         example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      description:
+        type: string
+        description: Description of the item.
+        example: fee
       amount:
         type: integer
         description: Amount of transaction in cents. This value can be + or -.
@@ -260,6 +264,11 @@ definitions:
         
   create-transaction:
     type: object
+    required:
+      - account_id
+      - transaction_category
+      - external_transaction_id
+      - line_items
     properties:
       account_id:
         type: string
@@ -282,11 +291,19 @@ definitions:
           
   create-line-item:
     type: object
+    required:
+      - amount
+      - description
+      - asset_id
     properties:
       amount:
         type: integer
         description: Amount of transaction in cents. This value can be + or -.
         example: 10000
+      description:
+        type: string
+        description: Description of the item.
+        example: fee
       asset_id:
         type: string
         example: 7fa530ed-10cc-452b-8aef-632bb33e7367
@@ -345,38 +362,30 @@ definitions:
         type: string
         enum: [user, project, organisation]
         example: project
-      total_balance:
-        type: integer
-        description: Amount in cents.
-        example: 1503428
       available_balance:
         type: integer
-        description: Available balance for the project. totalBalance - feeBalance.
+        description: Available balance for the project. total_credit - total_debit.
         example: 1488394
-      fee_balance:
+      total_count:
         type: integer
-        description: Total unpaid fees.
-        example: 15034
+        description: Total transaction count.
+        example:
+          min:
+            value: 0
       total_credit:
         type: integer
         description: Total credit to project.
         example: 2503428
-      total_debit:
-        type: integer
-        description: Total debit from project.
-        example: -1000000
-      total_count:
-        type: integer
-        description: Credit transaction count.
-        example:
-          min:
-            value: 0
       credit_count:
         type: integer
         description: Credit transaction count.
         example:
           min:
             value: 0
+      total_debit:
+        type: integer
+        description: Total debit from project.
+        example: -1000000
       debit_count:
         type: integer
         description: Debit transaction count.

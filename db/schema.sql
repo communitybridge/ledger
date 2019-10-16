@@ -134,6 +134,7 @@ CREATE TABLE public.line_items (
     transaction_id uuid NOT NULL,
     amount integer NOT NULL,
     asset_id integer NOT NULL,
+    description text,
     metadata json,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
     updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL

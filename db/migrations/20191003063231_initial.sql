@@ -81,6 +81,7 @@ create table line_items
 
     amount integer NOT NULL,
     asset_id integer NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    description text,
     metadata json,
     
     created_at int8 NOT NULL DEFAULT extract(epoch from now()),

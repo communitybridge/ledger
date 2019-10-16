@@ -74,18 +74,26 @@ func (repo *repository) GetEntityBalance(ctx context.Context, params *balance.Ge
 		startDate = *params.StartDate
 	}
 
-	query := `
-		SELECT
+	query := `SELECT
 			e.entity_id AS EntityID,
 			e.entity_type AS EntityType,
-			count(t.id) as TotalCount,
-			sum(l.amount) as TotalAmount
+			DebitCount,
+			TotalDebit,
+			CreditCount,
+			TotalCredit
 		FROM entities e
-		LEFT JOIN transactions AS t on t.account_id = e.account_id
-		LEFT JOIN line_items AS l on l.transaction_id = t.id
+		LEFT JOIN transactions on transactions.account_id = e.account_id
+		LEFT JOIN (
+			SELECT transaction_id,
+			sum(case when amount < 0 then 1 else 0 end) as DebitCount, 
+			sum(case when amount < 0 then amount else 0 end)*-1 as TotalDebit,
+			sum(case when amount >= 0 then 1 else 0 end) as CreditCount, 
+			sum(case when amount >= 0 then amount else 0 end) as TotalCredit
+			FROM line_items
+			group by transaction_id) as l on l.transaction_id = transactions.id
 		WHERE
-			e.entity_id = $1 AND t.created_at >= $2 AND t.created_at <= $3
-		GROUP BY e.entity_id, e.entity_type;`
+			e.entity_id = $1 AND transactions.created_at >= $2 AND transactions.created_at <= $3
+		group by EntityID, EntityType, DebitCount, TotalDebit, CreditCount, TotalCredit;`
 
 	log.Info(log.StripSpecialChars(query))
 
@@ -95,8 +103,10 @@ func (repo *repository) GetEntityBalance(ctx context.Context, params *balance.Ge
 	if err := row.Scan(
 		&balance.EntityID,
 		&balance.EntityType,
-		&balance.TotalCount,
-		&balance.TotalBalance); err != nil {
+		&balance.DebitCount,
+		&balance.TotalDebit,
+		&balance.CreditCount,
+		&balance.TotalCredit); err != nil {
 
 		log.Error(err.Error(), err)
 
@@ -107,6 +117,11 @@ func (repo *repository) GetEntityBalance(ctx context.Context, params *balance.Ge
 
 		return nil, swagger.ErrNotFound
 	}
+
+	balance.AvailableBalance = balance.TotalCredit - balance.TotalDebit
+	balance.TotalCount = balance.CreditCount + balance.DebitCount
+
+	fmt.Println(fmt.Sprintf("balance: %+v", balance))
 
 	return balance, nil
 }
