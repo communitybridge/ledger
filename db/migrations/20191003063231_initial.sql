@@ -17,7 +17,7 @@ CREATE TYPE entity_type_enum AS ENUM (
 
 create table assets
 (
-    id SERIAL,
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
     abbrv VARCHAR(20) NOT NULL, 
 
@@ -34,7 +34,7 @@ create table accounts
     external_source_type source_type_enum NOT NULL,
     external_account_id text,
 
-    metadata json,
+    metadata jsonb DEFAULT '{}',
     created_at int8 NOT NULL DEFAULT extract(epoch from now()),
     updated_at int8 NOT NULL DEFAULT extract(epoch from now()),
 
@@ -48,7 +48,7 @@ create table entities
     entity_id uuid NOT NULL,
     entity_type entity_type_enum NOT NULL,
     account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    metadata json,
+    metadata jsonb DEFAULT '{}',
 
     created_at int8 NOT NULL DEFAULT extract(epoch from now()),
     updated_at int8 NOT NULL DEFAULT extract(epoch from now()),
@@ -66,7 +66,7 @@ create table transactions
     transaction_category text,
     external_transaction_id text,
     running_balance integer NOT NULL,
-    metadata json,
+    metadata jsonb DEFAULT '{}',
 
     created_at int8 NOT NULL DEFAULT extract(epoch from now()),
     updated_at int8 NOT NULL DEFAULT extract(epoch from now()),
@@ -80,9 +80,9 @@ create table line_items
     transaction_id uuid NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
 
     amount integer NOT NULL,
-    asset_id integer NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    asset_id uuid NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
     description text,
-    metadata json,
+    metadata jsonb DEFAULT '{}',
     
     created_at int8 NOT NULL DEFAULT extract(epoch from now()),
     updated_at int8 NOT NULL DEFAULT extract(epoch from now()),
@@ -92,6 +92,10 @@ create table line_items
 
 CREATE INDEX idx_entity_id 
 ON entities(entity_id);
+
+CREATE INDEX idx_external_account_id 
+ON accounts(external_account_id);
+
 
 -- migrate:down
 -- DROP TABLE attribute;

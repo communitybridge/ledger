@@ -8,6 +8,7 @@ import (
 	"github.com/communitybridge/ledger/gen/restapi/operations/transactions"
 	"github.com/communitybridge/ledger/swagger"
 	"github.com/jmoiron/sqlx"
+	"github.com/jmoiron/sqlx/types"
 	"github.com/pkg/errors"
 
 	log "github.com/communitybridge/ledger/logging"
@@ -36,23 +37,23 @@ func (repo *repository) GetDB() *sqlx.DB {
 	return repo.db
 }
 
-// DoesAssetExist checks if a given currency exists
-func DoesAssetExist(repo *repository, abbrv *string) (bool, string) {
+// DoesAssetExist checks if a given asset exists
+func DoesAssetExist(repo *repository, id string) (bool, error) {
 	log.Info("entered function DoesAssetExist")
 
 	var res = ""
-	err := repo.db.Get(&res, "SELECT id FROM asset WHERE abbrv=$1", abbrv)
+	err := repo.db.Get(&res, "SELECT id FROM assets WHERE id=$1", id)
 	if err != nil {
-		err = fmt.Errorf("asset with abbreviation : `%s` does not exist", *abbrv)
+		err = fmt.Errorf("asset with id : `%s` does not exist", id)
 		log.Info(err.Error())
-		return false, res
+		return false, err
 	}
 
-	return true, res
+	return true, nil
 }
 
 // DoesAccountExist checks if a given account exists
-func DoesAccountExist(repo *repository, id string) (bool, error) {
+func DoesAccountExist(repo *repository, id string) bool {
 	log.Info("entered function DoesAccountExist")
 
 	var res = ""
@@ -60,10 +61,25 @@ func DoesAccountExist(repo *repository, id string) (bool, error) {
 	if err != nil {
 		err = fmt.Errorf("account with id : `%s` does not exist", id)
 		log.Info(err.Error())
-		return false, err
+		return false
 	}
 
-	return true, nil
+	return true
+}
+
+// DoesEntityExist checks if a given account exists
+func DoesEntityExist(repo *repository, entityID string, entityType string) bool {
+	log.Info("entered function DoesEntityExist")
+
+	var res = ""
+	err := repo.db.Get(&res, "SELECT id FROM entities WHERE entity_id=$1 AND entity_type=$2", entityID, entityType)
+	if err != nil {
+		err = fmt.Errorf("entity with id: `%s` and type: '%s' does not exist", entityID, entityType)
+		log.Info(err.Error())
+		return false
+	}
+
+	return true
 }
 
 // DoesTransactionExist checks if a given transaction exists
@@ -258,7 +274,157 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 
 	log.Info("entered function CreateTransaction")
 
-	transactionResp := models.Transaction{}
+	// Check if account exists
+	accountExist := DoesAccountExist(repo, *params.AccountID)
+	if !accountExist {
+		err := fmt.Errorf("invalid account ID for this transaction %s", *params.AccountID)
+		log.Error(log.Trace(), err)
+		return nil, err
+	}
 
-	return &transactionResp, nil
+	// Check if entity exists
+	entityExist := DoesEntityExist(repo, *params.EntityID, *params.EntityType)
+	if !entityExist {
+		err := fmt.Errorf("invalid entity ID: %s or Type: %s", *params.EntityID, *params.EntityType)
+		log.Error(log.Trace(), err)
+		return nil, err
+	}
+
+	// Stub, replace.
+	runningBalance := 1000
+
+	metaDataJSON := types.JSONText(string(params.Metadata))
+	metaDataJSONValue, err := metaDataJSON.Value()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create a new transaction entry
+	sql := `
+		INSERT INTO transactions (
+			account_id,
+			transaction_category,
+			external_transaction_id,
+			running_balance,
+			metadata
+		)
+			VALUES ($1, $2, $3, $4, $5)
+		RETURNING 
+			id AS ID,
+			account_id AS AccountID,
+			external_transaction_id AS ExternalTransactionID,
+			metadata AS Metadata,
+			running_balance AS RunningBalance,
+			transaction_category AS TransactionCategory,
+			created_at AS CreatedAt,
+			updated_at AS UpdatedAt;`
+
+	log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
+		params.AccountID,
+		params.TransactionCategory,
+		params.ExternalTransactionID,
+		runningBalance,
+		params.Metadata,
+	))
+
+	// Begin a transaction
+	tx, err := repo.db.Beginx()
+	if err != nil {
+		log.Fatal(log.Trace(), err)
+	}
+	defer func() {
+		if err != nil {
+			log.Error(log.Trace(), err)
+			tx.Rollback()
+			return
+		}
+	}()
+
+	// Insert Statement
+	row := tx.QueryRowx(sql,
+		params.AccountID,
+		params.TransactionCategory,
+		params.ExternalTransactionID,
+		runningBalance,
+		metaDataJSONValue,
+	)
+
+	transaction := models.Transaction{}
+	if err = row.StructScan(&transaction); err != nil {
+		log.Error(log.Trace(), err)
+		return nil, err
+	}
+
+	items := []*models.LineItem{}
+	for _, item := range params.LineItems {
+
+		// Check if asset exists
+		assetExists, _ := DoesAssetExist(repo, *item.AssetID)
+		if !assetExists {
+			err := fmt.Errorf("invalid asset ID %s", *item.AssetID)
+			log.Error(log.Trace(), err)
+			return nil, err
+		}
+
+		metaDataJSON := types.JSONText(string(item.Metadata))
+		metaDataJSONValue, err := metaDataJSON.Value()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Inset Line Items
+		sql = `
+		INSERT INTO line_items (
+			transaction_id,
+			amount,
+			description,
+			asset_id,
+			metadata
+		)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING 
+			id AS ID,
+			transaction_id AS TransactionID,
+			amount AS Amount,
+			description as Description,
+			asset_id as AssetID,
+			metadata AS Metadata,
+			created_at AS CreatedAt,
+			updated_at AS UpdatedAt;`
+
+		log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
+			transaction.ID,
+			*item.Amount,
+			*item.Description,
+			*item.AssetID,
+			metaDataJSONValue,
+		))
+
+		// Insert LineItem
+		row := tx.QueryRowx(sql,
+			transaction.ID,
+			*item.Amount,
+			*item.Description,
+			*item.AssetID,
+			metaDataJSONValue,
+		)
+
+		lineItem := models.LineItem{}
+		if err = row.StructScan(&lineItem); err != nil {
+			log.Error(log.Trace(), err)
+			return nil, err
+		}
+
+		items = append(items, &lineItem)
+	}
+
+	transaction.LineItems = items
+
+	err = tx.Commit()
+	if err != nil {
+		log.Error(log.Trace(), err)
+		return nil, err
+	}
+
+	return &transaction, nil
 }

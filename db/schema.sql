@@ -71,7 +71,7 @@ CREATE TABLE public.accounts (
     id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     external_source_type public.source_type_enum NOT NULL,
     external_account_id text,
-    metadata json,
+    metadata jsonb DEFAULT '{}'::jsonb,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
     updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
@@ -82,32 +82,12 @@ CREATE TABLE public.accounts (
 --
 
 CREATE TABLE public.assets (
-    id integer NOT NULL,
+    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     name character varying(50) NOT NULL,
     abbrv character varying(20) NOT NULL,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
     updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
-
-
---
--- Name: assets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.assets_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: assets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.assets_id_seq OWNED BY public.assets.id;
 
 
 --
@@ -119,7 +99,7 @@ CREATE TABLE public.entities (
     entity_id uuid NOT NULL,
     entity_type public.entity_type_enum NOT NULL,
     account_id uuid NOT NULL,
-    metadata json,
+    metadata jsonb DEFAULT '{}'::jsonb,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
     updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
@@ -133,9 +113,9 @@ CREATE TABLE public.line_items (
     id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     transaction_id uuid NOT NULL,
     amount integer NOT NULL,
-    asset_id integer NOT NULL,
+    asset_id uuid NOT NULL,
     description text,
-    metadata json,
+    metadata jsonb DEFAULT '{}'::jsonb,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
     updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
@@ -160,17 +140,10 @@ CREATE TABLE public.transactions (
     transaction_category text,
     external_transaction_id text,
     running_balance integer NOT NULL,
-    metadata json,
+    metadata jsonb DEFAULT '{}'::jsonb,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
     updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
-
-
---
--- Name: assets id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.assets ALTER COLUMN id SET DEFAULT nextval('public.assets_id_seq'::regclass);
 
 
 --
@@ -250,6 +223,13 @@ ALTER TABLE ONLY public.transactions
 --
 
 CREATE INDEX idx_entity_id ON public.entities USING btree (entity_id);
+
+
+--
+-- Name: idx_external_account_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_external_account_id ON public.accounts USING btree (external_account_id);
 
 
 --

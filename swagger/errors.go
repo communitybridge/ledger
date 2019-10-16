@@ -56,8 +56,10 @@ func TransactionErrorHandler(label string, err error) middleware.Responder {
 	switch err.Error() {
 	case ErrDuplicate.Error():
 		return transactions.NewCreateTransactionConflict().WithPayload(ErrorResponse(err))
+	case ErrNotFound.Error():
+		return transactions.NewListTransactionsBadRequest().WithPayload(ErrorResponse(err))
 	default:
-		return transactions.NewListTransactionsBadRequest()
+		return transactions.NewCreateTransactionBadRequest().WithPayload(ErrorResponse(err))
 	}
 }
 
@@ -69,6 +71,6 @@ func BalanceErrorHandler(label string, err error) middleware.Responder {
 	case ErrEmptyResult.Error():
 		return balance.NewGetBalanceNotFound().WithPayload(ErrorResponse(err))
 	default:
-		return balance.NewGetBalanceBadRequest()
+		return balance.NewGetBalanceBadRequest().WithPayload(ErrorResponse(err))
 	}
 }

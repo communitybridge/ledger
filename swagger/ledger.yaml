@@ -50,13 +50,13 @@ paths:
           description: date-time in epoch (seconds)
           required: false
       responses:
-        '200':
+        200:
           description: 'OK'
           schema:
             $ref: '#/definitions/balance'
-        '400':
+        400:
           $ref: '#/responses/invalid-request'
-        '404':
+        404:
           $ref: '#/responses/not-found'
       tags:
         - balance
@@ -70,11 +70,11 @@ paths:
         - $ref: '#/parameters/offset'
         - $ref: '#/parameters/order_by'
       responses:
-        '200':
+        200:
           description: 'Success'
           schema:
             $ref: '#/definitions/transaction-list'
-        '400':
+        400:
           $ref: '#/responses/invalid-request'
       tags:
         - transactions
@@ -91,13 +91,13 @@ paths:
           schema:
             $ref: '#/definitions/create-transaction'
       responses:
-        '201':
+        201:
           description: 'Created'
           schema:
             $ref: '#/definitions/transaction'
-        '400':
+        400:
           $ref: '#/responses/invalid-request'
-        '409':
+        409:
           $ref: '#/responses/conflict'
       tags:
         - transactions
@@ -114,13 +114,13 @@ paths:
           type: string
           required: true
       responses:
-        '200':
+        200:
           description: 'OK'
           schema:
             $ref: '#/definitions/transaction'
-        '400':
+        400:
           $ref: '#/responses/invalid-request'
-        '404':
+        404:
           $ref: '#/responses/not-found'
       tags:
         - transactions
@@ -205,9 +205,8 @@ definitions:
         description: ID of this transaction from the external source
         example: txe0e14a-17d
       metadata:
-        type: object
+        type: string
         description: json formatted string holding dynamic data
-        example: {note: lorem ipsum}
       created_at:
         type: integer
         description: date-time in epoch (seconds)
@@ -248,9 +247,8 @@ definitions:
         example: 7fa530ed-10cc-452b-8aef-632bb33e7367
         description: UUID fk to the asset table
       metadata:
-        type: object
+        type: string
         description: json formatted string holding dynamic data
-        example: {note: lorem ipsum}
       created_at:
         type: integer
         description: date-time in epoch (seconds)
@@ -266,10 +264,19 @@ definitions:
     type: object
     required:
       - account_id
-      - transaction_category
+      - entity_id
+      - entity_type
       - external_transaction_id
       - line_items
     properties:
+      entity_id:
+        type: string
+        description: UUID of the associated entity.
+        example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      entity_type:
+        type: string
+        enum: [user, project, organisation]
+        example: user
       account_id:
         type: string
         description: UUID of the associated account.
@@ -283,7 +290,6 @@ definitions:
       metadata:
         type: string
         description: json formatted string holding dynamic data
-        example: {note: lorem ipsum}
       line_items:
         type: array
         items:
@@ -309,9 +315,8 @@ definitions:
         example: 7fa530ed-10cc-452b-8aef-632bb33e7367
         description: UUID fk to the asset table
       metadata:
-        type: object
+        type: string
         description: json formatted string holding dynamic data
-        example: {note: lorem ipsum}
 
   sub-category:
     type: object
