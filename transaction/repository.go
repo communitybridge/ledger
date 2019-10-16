@@ -359,9 +359,10 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	for _, item := range params.LineItems {
 
 		// Check if asset exists
-		assetExists, _ := DoesAssetExist(repo, *item.AssetID)
-		if !assetExists {
-			err := fmt.Errorf("invalid asset ID %s", *item.AssetID)
+		var res = ""
+		err := tx.Get(&res, "SELECT id FROM assets WHERE id=$1", *item.AssetID)
+		if err != nil {
+			err = fmt.Errorf("asset with id : `%s` does not exist", *item.AssetID)
 			log.Error(log.Trace(), err)
 			return nil, err
 		}
