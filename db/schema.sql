@@ -70,10 +70,10 @@ SET default_with_oids = false;
 CREATE TABLE public.accounts (
     id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     external_source_type public.source_type_enum NOT NULL,
-    external_account_id text,
-    metadata jsonb DEFAULT '{}'::jsonb,
-    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
-    updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
+    external_account_id text NOT NULL,
+    entity_id uuid NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
 
 
@@ -82,12 +82,31 @@ CREATE TABLE public.accounts (
 --
 
 CREATE TABLE public.assets (
-    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
+    id integer NOT NULL,
     name character varying(50) NOT NULL,
     abbrv character varying(20) NOT NULL,
-    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
-    updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
+    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
+
+
+--
+-- Name: assets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.assets_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: assets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.assets_id_seq OWNED BY public.assets.id;
 
 
 --
@@ -98,10 +117,8 @@ CREATE TABLE public.entities (
     id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     entity_id uuid NOT NULL,
     entity_type public.entity_type_enum NOT NULL,
-    account_id uuid NOT NULL,
-    metadata jsonb DEFAULT '{}'::jsonb,
-    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
-    updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
 
 
@@ -112,12 +129,11 @@ CREATE TABLE public.entities (
 CREATE TABLE public.line_items (
     id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     transaction_id uuid NOT NULL,
+    external_id text DEFAULT ''::text NOT NULL,
     amount integer NOT NULL,
-    asset_id uuid NOT NULL,
-    description text,
-    metadata jsonb DEFAULT '{}'::jsonb,
-    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
-    updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
+    description text DEFAULT ''::text NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
 
 
@@ -137,21 +153,29 @@ CREATE TABLE public.schema_migrations (
 CREATE TABLE public.transactions (
     id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     account_id uuid NOT NULL,
-    transaction_category text,
-    external_transaction_id text,
+    transaction_category text DEFAULT ''::text,
+    external_transaction_id text DEFAULT ''::text,
+    external_transaction_created_at bigint DEFAULT '-1'::integer NOT NULL,
     running_balance integer NOT NULL,
+    asset_id integer NOT NULL,
     metadata jsonb DEFAULT '{}'::jsonb,
-    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL,
-    updated_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
+    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
 
 
 --
--- Name: accounts accounts_id_external_source_type_external_account_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: assets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.assets ALTER COLUMN id SET DEFAULT nextval('public.assets_id_seq'::regclass);
+
+
+--
+-- Name: accounts accounts_external_source_type_external_account_id_entity_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.accounts
-    ADD CONSTRAINT accounts_id_external_source_type_external_account_id_key UNIQUE (id, external_source_type, external_account_id);
+    ADD CONSTRAINT accounts_external_source_type_external_account_id_entity_id_key UNIQUE (external_source_type, external_account_id, entity_id);
 
 
 --
@@ -179,11 +203,11 @@ ALTER TABLE ONLY public.assets
 
 
 --
--- Name: entities entities_entity_id_entity_type_account_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: entities entities_entity_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.entities
-    ADD CONSTRAINT entities_entity_id_entity_type_account_id_key UNIQUE (entity_id, entity_type, account_id);
+    ADD CONSTRAINT entities_entity_id_key UNIQUE (entity_id);
 
 
 --
@@ -233,19 +257,11 @@ CREATE INDEX idx_external_account_id ON public.accounts USING btree (external_ac
 
 
 --
--- Name: entities entities_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: accounts accounts_entity_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.entities
-    ADD CONSTRAINT entities_account_id_fkey FOREIGN KEY (account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
-
-
---
--- Name: line_items line_items_asset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.line_items
-    ADD CONSTRAINT line_items_asset_id_fkey FOREIGN KEY (asset_id) REFERENCES public.assets(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.accounts
+    ADD CONSTRAINT accounts_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES public.entities(entity_id) ON DELETE CASCADE;
 
 
 --
@@ -262,6 +278,14 @@ ALTER TABLE ONLY public.line_items
 
 ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_account_id_fkey FOREIGN KEY (account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: transactions transactions_asset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_asset_id_fkey FOREIGN KEY (asset_id) REFERENCES public.assets(id) ON DELETE CASCADE;
 
 
 --

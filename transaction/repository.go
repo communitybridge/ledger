@@ -38,28 +38,13 @@ func (repo *repository) GetDB() *sqlx.DB {
 }
 
 // DoesAssetExist checks if a given asset exists
-func DoesAssetExist(repo *repository, id string) (bool, error) {
+func DoesAssetExist(repo *repository, id int64) bool {
 	log.Info("entered function DoesAssetExist")
 
 	var res = ""
 	err := repo.db.Get(&res, "SELECT id FROM assets WHERE id=$1", id)
 	if err != nil {
-		err = fmt.Errorf("asset with id : `%s` does not exist", id)
-		log.Info(err.Error())
-		return false, err
-	}
-
-	return true, nil
-}
-
-// DoesAccountExist checks if a given account exists
-func DoesAccountExist(repo *repository, id string) bool {
-	log.Info("entered function DoesAccountExist")
-
-	var res = ""
-	err := repo.db.Get(&res, "SELECT id FROM accounts WHERE id=$1", id)
-	if err != nil {
-		err = fmt.Errorf("account with id : `%s` does not exist", id)
+		err = fmt.Errorf("asset with id : `%d` does not exist", id)
 		log.Info(err.Error())
 		return false
 	}
@@ -97,6 +82,80 @@ func DoesTransactionExist(repo *repository, id string) (bool, string) {
 	return true, res
 }
 
+// CreateAccount creates a new account
+func CreateAccount(repo *repository, params *models.CreateTransaction) (string, error) {
+	log.Info("entered function CreateAccount")
+
+	sql := `
+	INSERT INTO accounts (entity_id, external_source_type, external_account_id)
+		VALUES ($1, $2, $3)
+	ON CONFLICT DO NOTHING
+	RETURNING id;`
+
+	log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
+		params.EntityID,
+		params.ExternalSourceType,
+		params.ExternalAccountID))
+
+	// Insert Statement
+	row := repo.db.QueryRowx(sql,
+		params.EntityID,
+		params.ExternalSourceType,
+		params.ExternalAccountID,
+	)
+
+	var accountID = ""
+	if err := row.Scan(&accountID); err != nil {
+		log.Error(log.Trace(), err)
+		return "", err
+	}
+
+	log.Info(fmt.Sprintf("added account with ID %s to table", accountID))
+
+	return accountID, nil
+}
+
+// GetExistingAccount checks if a given account exists and returns the account ID
+func GetExistingAccount(repo *repository, params *models.CreateTransaction) string {
+	log.Info("entered function GetExistingAccount")
+
+	var accountID = ""
+	err := repo.db.Get(&accountID,
+		`SELECT 
+			id FROM accounts 
+		WHERE entity_id=$1 
+		AND external_source_type=$2
+		AND external_account_id=$3`,
+		params.EntityID, params.ExternalSourceType, params.ExternalAccountID)
+	if err != nil {
+		err = fmt.Errorf(`account with entity_id: %s, external_source_type: %s, external_account_id: %s does not exist`,
+			params.EntityID, params.ExternalSourceType, params.ExternalAccountID)
+		log.Info(err.Error())
+	}
+
+	return accountID
+}
+
+// HandleAccount checks if a given account exists and returns the account ID
+// If it does not exist it creates the account and returns the new account ID
+func HandleAccount(repo *repository, params *models.CreateTransaction) (string, error) {
+
+	// Check if account exists
+	accountID := GetExistingAccount(repo, params)
+	if accountID != "" {
+		return accountID, nil
+	}
+
+	// Else, create a new one.
+	accountID, err := CreateAccount(repo, params)
+	if err != nil {
+		log.Error(log.Trace(), err)
+		return "", err
+	}
+
+	return accountID, nil
+}
+
 // getTransactionLineItems returns party data from required tables
 func getTransactionLineItems(repo *repository, transactionID string) ([]*models.LineItem, error) {
 
@@ -109,10 +168,9 @@ func getTransactionLineItems(repo *repository, transactionID string) ([]*models.
 		SELECT
 			l.id AS ID,
 			l.amount AS Amount,
-			l.asset_id AS AssetID,
+			l.description,
 			l.metadata AS Metadata,
-			l.created_at AS CreatedAt,
-			l.updated_at AS UpdatedAt
+			l.created_at AS CreatedAt
 		FROM
 			line_items l
 		WHERE
@@ -172,11 +230,11 @@ func (repo *repository) ListTransactions(ctx context.Context, params *transactio
 			t.id AS ID,
 			t.account_id AS AccountID,
 			t.external_transaction_id AS ExternalTransactionID,
+			t.asset_id AS AssetID,
 			t.metadata AS Metadata,
 			t.running_balance AS RunningBalance,
 			t.transaction_category AS TransactionCategory,
-			t.created_at AS CreatedAt,
-			t.updated_at AS UpdatedAt
+			t.created_at AS CreatedAt
 		FROM
 			transactions t
 		limit $1
@@ -200,11 +258,11 @@ func (repo *repository) ListTransactions(ctx context.Context, params *transactio
 			&transaction.ID,
 			&transaction.AccountID,
 			&transaction.ExternalTransactionID,
+			&transaction.AssetID,
 			&transaction.Metadata,
 			&transaction.RunningBalance,
 			&transaction.TransactionCategory,
 			&transaction.CreatedAt,
-			&transaction.UpdatedAt,
 		); err != nil {
 			log.Error(err.Error(), err)
 			return nil, err
@@ -240,8 +298,7 @@ func (repo *repository) GetTransaction(ctx context.Context, transactionID string
 			t.metadata AS Metadata,
 			t.running_balance AS RunningBalance,
 			t.transaction_category AS TransactionCategory,
-			t.created_at AS CreatedAt,
-			t.updated_at AS UpdatedAt
+			t.created_at AS CreatedAt
 		FROM
 			transactions t
 		WHERE
@@ -271,21 +328,26 @@ func (repo *repository) GetTransaction(ctx context.Context, transactionID string
 // CreateTransaction creates a new transaction and any related rows
 // in required tables if they don't already exist
 func (repo *repository) CreateTransaction(ctx context.Context, params *models.CreateTransaction) (*models.Transaction, error) {
-
 	log.Info("entered function CreateTransaction")
-
-	// Check if account exists
-	accountExist := DoesAccountExist(repo, *params.AccountID)
-	if !accountExist {
-		err := fmt.Errorf("invalid account ID for this transaction %s", *params.AccountID)
-		log.Error(log.Trace(), err)
-		return nil, err
-	}
 
 	// Check if entity exists
 	entityExist := DoesEntityExist(repo, *params.EntityID, *params.EntityType)
 	if !entityExist {
 		err := fmt.Errorf("invalid entity ID: %s or Type: %s", *params.EntityID, *params.EntityType)
+		log.Error(log.Trace(), err)
+		return nil, err
+	}
+
+	// Check if asset exists
+	assetExist := DoesAssetExist(repo, *params.AssetID)
+	if !assetExist {
+		err := fmt.Errorf("invalid asset ID: %d", *params.AssetID)
+		log.Error(log.Trace(), err)
+		return nil, err
+	}
+
+	accountID, err := HandleAccount(repo, params)
+	if err != nil {
 		log.Error(log.Trace(), err)
 		return nil, err
 	}
@@ -302,27 +364,28 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	// Create a new transaction entry
 	sql := `
 		INSERT INTO transactions (
-			account_id,
 			transaction_category,
 			external_transaction_id,
+			asset_id,
+			account_id,
 			running_balance,
 			metadata
 		)
-			VALUES ($1, $2, $3, $4, $5)
+			VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING 
 			id AS ID,
-			account_id AS AccountID,
 			external_transaction_id AS ExternalTransactionID,
 			metadata AS Metadata,
 			running_balance AS RunningBalance,
+			asset_id AS AssetID,
 			transaction_category AS TransactionCategory,
-			created_at AS CreatedAt,
-			updated_at AS UpdatedAt;`
+			created_at AS CreatedAt`
 
 	log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
-		params.AccountID,
 		params.TransactionCategory,
 		params.ExternalTransactionID,
+		params.AssetID,
+		accountID,
 		runningBalance,
 		params.Metadata,
 	))
@@ -342,9 +405,10 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 
 	// Insert Statement
 	row := tx.QueryRowx(sql,
-		params.AccountID,
 		params.TransactionCategory,
 		params.ExternalTransactionID,
+		params.AssetID,
+		accountID,
 		runningBalance,
 		metaDataJSONValue,
 	)
@@ -358,15 +422,6 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	items := []*models.LineItem{}
 	for _, item := range params.LineItems {
 
-		// Check if asset exists
-		var res = ""
-		err := tx.Get(&res, "SELECT id FROM assets WHERE id=$1", *item.AssetID)
-		if err != nil {
-			err = fmt.Errorf("asset with id : `%s` does not exist", *item.AssetID)
-			log.Error(log.Trace(), err)
-			return nil, err
-		}
-
 		metaDataJSON := types.JSONText(string(item.Metadata))
 		metaDataJSONValue, err := metaDataJSON.Value()
 		if err != nil {
@@ -379,25 +434,21 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 			transaction_id,
 			amount,
 			description,
-			asset_id,
 			metadata
 		)
-		VALUES ($1, $2, $3, $4, $5)
+		VALUES ($1, $2, $3, $4)
 		RETURNING 
 			id AS ID,
 			transaction_id AS TransactionID,
 			amount AS Amount,
 			description as Description,
-			asset_id as AssetID,
 			metadata AS Metadata,
-			created_at AS CreatedAt,
-			updated_at AS UpdatedAt;`
+			created_at AS CreatedAt`
 
 		log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
 			transaction.ID,
 			*item.Amount,
 			*item.Description,
-			*item.AssetID,
 			metaDataJSONValue,
 		))
 
@@ -406,7 +457,6 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 			transaction.ID,
 			*item.Amount,
 			*item.Description,
-			*item.AssetID,
 			metaDataJSONValue,
 		)
 

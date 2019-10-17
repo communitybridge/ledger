@@ -74,7 +74,8 @@ func (repo *repository) GetEntityBalance(ctx context.Context, params *balance.Ge
 		startDate = *params.StartDate
 	}
 
-	query := `SELECT
+	query := `
+		SELECT
 			e.entity_id AS EntityID,
 			e.entity_type AS EntityType,
 			DebitCount,
@@ -82,7 +83,8 @@ func (repo *repository) GetEntityBalance(ctx context.Context, params *balance.Ge
 			CreditCount,
 			TotalCredit
 		FROM entities e
-		LEFT JOIN transactions on transactions.account_id = e.account_id
+		LEFT JOIN accounts on accounts.entity_id = e.entity_id
+		LEFT JOIN transactions on transactions.account_id = accounts.id
 		LEFT JOIN (
 			SELECT transaction_id,
 			sum(case when amount < 0 then 1 else 0 end) as DebitCount, 

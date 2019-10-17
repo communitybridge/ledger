@@ -190,6 +190,10 @@ definitions:
         description: UUID of the line_item.
         readOnly: true
         example: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+      asset_id:
+        type: integer
+        example: 0001
+        description: serial fk to the asset table
       account_id:
         type: string
         description: UUID of the associated account.
@@ -204,6 +208,12 @@ definitions:
         type: string
         description: ID of this transaction from the external source
         example: txe0e14a-17d
+        x-omitempty: false
+      external_transaction_created_at:
+        type: integer
+        description: date-time in epoch (seconds)
+        readOnly: true
+        example: 1539815989
       metadata:
         type: string
         description: json formatted string holding dynamic data
@@ -212,7 +222,7 @@ definitions:
         description: date-time in epoch (seconds)
         readOnly: true
         example: 1539815989
-      updated_at:
+      external_created_at:
         type: integer
         description: date-time in epoch (seconds)
         readOnly: true
@@ -234,10 +244,15 @@ definitions:
         type: string
         description: UUID of the transaction.
         example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      external_id:
+        type: string
+        description: ID of this line_item from the external source
+        example: txe0e14a-17d
       description:
         type: string
         description: Description of the item.
         example: fee
+        x-omitempty: false
       amount:
         type: integer
         description: Amount of transaction in cents. This value can be + or -.
@@ -254,18 +269,15 @@ definitions:
         description: date-time in epoch (seconds)
         readOnly: true
         example: 1539815989
-      updated_at:
-        type: integer
-        description: date-time in epoch (seconds)
-        readOnly: true
-        example: 1539815989
         
   create-transaction:
     type: object
     required:
-      - account_id
+      - asset_id
       - entity_id
       - entity_type
+      - external_source_type
+      - external_account_id
       - external_transaction_id
       - line_items
     properties:
@@ -277,10 +289,18 @@ definitions:
         type: string
         enum: [user, project, organisation]
         example: user
-      account_id:
+      external_source_type:
         type: string
-        description: UUID of the associated account.
-        example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+        enum: [bill.com, stripe, expensify]
+        example: bill.com
+      external_account_id:
+        type: string
+        description: ID of the external account
+        example: stripe-17dabc
+      asset_id:
+        type: integer
+        example: 0001
+        description: serial fk to the asset table
       transaction_category:
         type: string
       external_transaction_id:
@@ -300,7 +320,6 @@ definitions:
     required:
       - amount
       - description
-      - asset_id
     properties:
       amount:
         type: integer
@@ -310,10 +329,10 @@ definitions:
         type: string
         description: Description of the item.
         example: fee
-      asset_id:
+      external_id:
         type: string
-        example: 7fa530ed-10cc-452b-8aef-632bb33e7367
-        description: UUID fk to the asset table
+        description: ID of this line_item from the external source
+        example: txe0e14a-17d
       metadata:
         type: string
         description: json formatted string holding dynamic data
@@ -371,38 +390,45 @@ definitions:
         type: integer
         description: Available balance for the project. total_credit - total_debit.
         example: 1488394
+        x-omitempty: false
       total_count:
         type: integer
         description: Total transaction count.
         example:
           min:
             value: 0
+        x-omitempty: false
       total_credit:
         type: integer
         description: Total credit to project.
         example: 2503428
+        x-omitempty: false
       credit_count:
         type: integer
         description: Credit transaction count.
         example:
           min:
             value: 0
+        x-omitempty: false
       total_debit:
         type: integer
         description: Total debit from project.
         example: -1000000
+        x-omitempty: false
       debit_count:
         type: integer
         description: Debit transaction count.
         example:
           min:
             value: 0
+        x-omitempty: false
       backers:
         type: integer
         description: Total backers for the project.
         example:
           min:
             value: 0
+        x-omitempty: false
       sub_totals:
         type: array
         items:
