@@ -58,6 +58,7 @@ create table transactions
 (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+
     transaction_category text DEFAULT '',
     external_transaction_id text DEFAULT '',
     external_transaction_created_at int8 NOT NULL DEFAULT -1,
