@@ -129,7 +129,7 @@ func GetExistingAccount(repo *repository, params *models.CreateTransaction) stri
 		params.EntityID, params.ExternalSourceType, params.ExternalAccountID)
 	if err != nil {
 		err = fmt.Errorf(`account with entity_id: %s, external_source_type: %s, external_account_id: %s does not exist`,
-			params.EntityID, params.ExternalSourceType, params.ExternalAccountID)
+			*params.EntityID, *params.ExternalSourceType, *params.ExternalAccountID)
 		log.Info(err.Error())
 	}
 
@@ -355,7 +355,7 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	// Stub, replace.
 	runningBalance := 1000
 
-	metaDataJSON := types.JSONText(string(params.Metadata))
+	metaDataJSON := types.JSONText(params.Metadata)
 	metaDataJSONValue, err := metaDataJSON.Value()
 	if err != nil {
 		log.Fatal(err)
@@ -422,8 +422,8 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	items := []*models.LineItem{}
 	for _, item := range params.LineItems {
 
-		metaDataJSON := types.JSONText(string(item.Metadata))
-		metaDataJSONValue, err := metaDataJSON.Value()
+		metaDataJSON := types.JSONText(item.Metadata)
+		metaDataJSONValue, err = metaDataJSON.Value()
 		if err != nil {
 			log.Fatal(err)
 		}
