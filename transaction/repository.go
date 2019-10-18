@@ -453,7 +453,7 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	)
 
 	transaction := models.Transaction{}
-	if err := row.Scan(
+	if err = row.Scan(
 		&transaction.ID,
 		&transaction.AccountID,
 		&transaction.ExternalTransactionID,

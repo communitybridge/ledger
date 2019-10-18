@@ -43,7 +43,7 @@ run:
 deps:
 	dep ensure -v
 
-build: deps
+build: deps lint
 	env GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o bin/$(SERVICE)
 	chmod +x bin/$(SERVICE)
 
