@@ -1,14 +1,5 @@
 
 --
--- Data for Name: assets; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.assets (id, name, abbrv, created_at) FROM stdin;
-1	US Dollar	USD	1554540743
-2	Euro	EUR	1554540743
-\.
-
---
 -- Data for Name: entities; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -30,9 +21,9 @@ COPY public.accounts (id, external_source_type, entity_id, external_account_id, 
 -- Data for Name: transactions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.transactions (id, account_id, transaction_category, external_transaction_id, asset_id, running_balance, created_at) FROM stdin;
-61b0c143-f1f9-457d-a889-80570b820348	5701249e-f33a-45a3-8722-e6917ccff6f0	random	a04c291f-234567	1	10200	1543509959
-fd54832d-d872-428b-a10d-17ddf782b4df	6eae6bb8-f7fb-425a-8af8-64adb616b739	random	a04c291f-234567	1	1000	1543509959
+COPY public.transactions (id, account_id, transaction_category, external_transaction_id, running_balance, created_at) FROM stdin;
+61b0c143-f1f9-457d-a889-80570b820348	5701249e-f33a-45a3-8722-e6917ccff6f0	random	a04c291f-234567	0	1543509959
+fd54832d-d872-428b-a10d-17ddf782b4df	6eae6bb8-f7fb-425a-8af8-64adb616b739	random	a04c291f-234567	0	1543509959
 \.
 
 --

@@ -15,16 +15,8 @@ CREATE TYPE entity_type_enum AS ENUM (
     'organisation'
 );
 
-create table assets
-(
-    id SERIAL,
-    name VARCHAR(50) NOT NULL,
-    abbrv VARCHAR(20) NOT NULL, 
-
-    created_at int8 NOT NULL DEFAULT extract(epoch from now()),
-
-    PRIMARY KEY(id),
-    UNIQUE (name, abbrv)
+CREATE TYPE asset_enum AS ENUM (
+	'usd'
 );
 
 create table entities
@@ -61,9 +53,9 @@ create table transactions
 
     transaction_category text DEFAULT '',
     external_transaction_id text DEFAULT '',
-    external_transaction_created_at int8 NOT NULL DEFAULT -1,
+    external_transaction_created_at int8 NOT NULL DEFAULT 0,
     running_balance integer NOT NULL,
-    asset_id integer NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    asset asset_enum NOT NULL DEFAULT 'usd',
     metadata jsonb DEFAULT '{}',
 
     created_at int8 NOT NULL DEFAULT extract(epoch from now()),
@@ -96,9 +88,9 @@ ON accounts(external_account_id);
 -- DROP TABLE attribute;
 DROP TABLE line_items;
 DROP TABLE transactions;
-DROP TABLE assets;
 DROP TABLE accounts;
 DROP TABLE entities;
+DROP TYPE asset_enum;
 DROP TYPE source_type_enum;
 DROP TYPE entity_type_enum;
 DROP EXTENSION pgcrypto;

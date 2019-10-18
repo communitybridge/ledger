@@ -37,21 +37,6 @@ func (repo *repository) GetDB() *sqlx.DB {
 	return repo.db
 }
 
-// DoesAssetExist checks if a given asset exists
-func DoesAssetExist(repo *repository, id int64) bool {
-	log.Info("entered function DoesAssetExist")
-
-	var res = ""
-	err := repo.db.Get(&res, "SELECT id FROM assets WHERE id=$1", id)
-	if err != nil {
-		err = fmt.Errorf("asset with id : `%d` does not exist", id)
-		log.Info(err.Error())
-		return false
-	}
-
-	return true
-}
-
 // DoesEntityExist checks if a given account exists
 func DoesEntityExist(repo *repository, entityID string, entityType string) bool {
 	log.Info("entered function DoesEntityExist")
@@ -230,7 +215,8 @@ func (repo *repository) ListTransactions(ctx context.Context, params *transactio
 			t.id AS ID,
 			t.account_id AS AccountID,
 			t.external_transaction_id AS ExternalTransactionID,
-			t.asset_id AS AssetID,
+			t.external_transaction_created_at AS ExternalTransactionCreatedAt,
+			t.asset AS Asset,
 			t.metadata AS Metadata,
 			t.running_balance AS RunningBalance,
 			t.transaction_category AS TransactionCategory,
@@ -258,7 +244,8 @@ func (repo *repository) ListTransactions(ctx context.Context, params *transactio
 			&transaction.ID,
 			&transaction.AccountID,
 			&transaction.ExternalTransactionID,
-			&transaction.AssetID,
+			&transaction.ExternalTransactionCreatedAt,
+			&transaction.Asset,
 			&transaction.Metadata,
 			&transaction.RunningBalance,
 			&transaction.TransactionCategory,
@@ -295,6 +282,8 @@ func (repo *repository) GetTransaction(ctx context.Context, transactionID string
 			t.id AS ID,
 			t.account_id AS AccountID,
 			t.external_transaction_id AS ExternalTransactionID,
+			t.external_transaction_created_at AS ExternalTransactionCreatedAt,
+			t.asset AS Asset,
 			t.metadata AS Metadata,
 			t.running_balance AS RunningBalance,
 			t.transaction_category AS TransactionCategory,
@@ -325,6 +314,52 @@ func (repo *repository) GetTransaction(ctx context.Context, transactionID string
 	return &transaction, nil
 }
 
+// getRunningBalance is a function to get the balance of all accounts associated with
+// the entity for the specified source_type (e.g. bill.com)
+func getRunningBalance(repo *repository, params *models.CreateTransaction) (int64, error) {
+	log.Info("entered function getRunningBalance")
+
+	query := `
+		SELECT
+			t.id,
+			t.running_balance AS RunningBalance
+		FROM transactions t
+		JOIN accounts a on t.account_id = a.id
+		WHERE
+			a.entity_id = $1 AND a.external_source_type = $2 AND a.external_account_id = $3
+		order by t.created_at desc
+		limit 1;`
+
+	log.Info(log.StripSpecialChars(query))
+
+	row := repo.db.QueryRowx(query, params.EntityID, params.ExternalSourceType, params.ExternalAccountID)
+
+	balance := RunningBalance{}
+	if err := row.Scan(&balance.TransactionID, &balance.CurrentRunningBalance); err != nil {
+		log.Error(err.Error(), err)
+		return 0, err
+	}
+
+	query = `
+	SELECT 
+		sum(case when amount < 0 then amount else 0 end)*-1 as TotalDebit,
+		sum(case when amount >= 0 then amount else 0 end) as TotalCredit
+	FROM line_items l
+	WHERE l.transaction_id = $1;`
+
+	log.Info(log.StripSpecialChars(query))
+
+	row = repo.db.QueryRowx(query, balance.TransactionID)
+	if err := row.Scan(&balance.TotalDebit, &balance.TotalCredit); err != nil {
+		log.Error(err.Error(), err)
+		return 0, err
+	}
+
+	newRunningBalance := balance.CurrentRunningBalance + (balance.TotalCredit - balance.TotalDebit)
+
+	return newRunningBalance, nil
+}
+
 // CreateTransaction creates a new transaction and any related rows
 // in required tables if they don't already exist
 func (repo *repository) CreateTransaction(ctx context.Context, params *models.CreateTransaction) (*models.Transaction, error) {
@@ -338,14 +373,6 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 		return nil, err
 	}
 
-	// Check if asset exists
-	assetExist := DoesAssetExist(repo, *params.AssetID)
-	if !assetExist {
-		err := fmt.Errorf("invalid asset ID: %d", *params.AssetID)
-		log.Error(log.Trace(), err)
-		return nil, err
-	}
-
 	accountID, err := HandleAccount(repo, params)
 	if err != nil {
 		log.Error(log.Trace(), err)
@@ -353,7 +380,10 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	}
 
 	// Stub, replace.
-	runningBalance := 1000
+	runningBalanceValue, err := getRunningBalance(repo, params)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	metaDataJSON := types.JSONText(params.Metadata)
 	metaDataJSONValue, err := metaDataJSON.Value()
@@ -361,12 +391,19 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 		log.Fatal(err)
 	}
 
+	// Set asset to usd default,
+	// allow for optional asset provided via param
+	asset := "usd"
+	if params.Asset != "" {
+		asset = params.Asset
+	}
+
 	// Create a new transaction entry
 	sql := `
 		INSERT INTO transactions (
 			transaction_category,
 			external_transaction_id,
-			asset_id,
+			asset,
 			account_id,
 			running_balance,
 			metadata
@@ -374,19 +411,21 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 			VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING 
 			id AS ID,
+			account_id AS AccountID,
 			external_transaction_id AS ExternalTransactionID,
+			external_transaction_created_at AS ExternalTransactionCreatedAt,
+			asset AS Asset,
 			metadata AS Metadata,
 			running_balance AS RunningBalance,
-			asset_id AS AssetID,
 			transaction_category AS TransactionCategory,
 			created_at AS CreatedAt`
 
 	log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
-		params.TransactionCategory,
+		&params.TransactionCategory,
 		params.ExternalTransactionID,
-		params.AssetID,
+		asset,
 		accountID,
-		runningBalance,
+		runningBalanceValue,
 		params.Metadata,
 	))
 
@@ -405,17 +444,27 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 
 	// Insert Statement
 	row := tx.QueryRowx(sql,
-		params.TransactionCategory,
+		&params.TransactionCategory,
 		params.ExternalTransactionID,
-		params.AssetID,
+		asset,
 		accountID,
-		runningBalance,
+		runningBalanceValue,
 		metaDataJSONValue,
 	)
 
 	transaction := models.Transaction{}
-	if err = row.StructScan(&transaction); err != nil {
-		log.Error(log.Trace(), err)
+	if err := row.Scan(
+		&transaction.ID,
+		&transaction.AccountID,
+		&transaction.ExternalTransactionID,
+		&transaction.ExternalTransactionCreatedAt,
+		&transaction.Asset,
+		&transaction.Metadata,
+		&transaction.RunningBalance,
+		&transaction.TransactionCategory,
+		&transaction.CreatedAt,
+	); err != nil {
+		log.Error(err.Error(), err)
 		return nil, err
 	}
 

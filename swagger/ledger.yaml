@@ -190,10 +190,10 @@ definitions:
         description: UUID of the line_item.
         readOnly: true
         example: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
-      asset_id:
-        type: integer
-        example: 0001
-        description: serial fk to the asset table
+      asset:
+        type: string
+        enum: [usd]
+        example: usd
       account_id:
         type: string
         description: UUID of the associated account.
@@ -257,10 +257,6 @@ definitions:
         type: integer
         description: Amount of transaction in cents. This value can be + or -.
         example: 10000
-      asset_id:
-        type: string
-        example: 7fa530ed-10cc-452b-8aef-632bb33e7367
-        description: UUID fk to the asset table
       metadata:
         type: string
         description: json formatted string holding dynamic data
@@ -273,7 +269,6 @@ definitions:
   create-transaction:
     type: object
     required:
-      - asset_id
       - entity_id
       - entity_type
       - external_source_type
@@ -297,10 +292,10 @@ definitions:
         type: string
         description: ID of the external account
         example: stripe-17dabc
-      asset_id:
-        type: integer
-        example: 0001
-        description: serial fk to the asset table
+      asset:
+        type: string
+        enum: [usd]
+        example: usd
       transaction_category:
         type: string
       external_transaction_id:

@@ -38,6 +38,15 @@ COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
 
 
 --
+-- Name: asset_enum; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.asset_enum AS ENUM (
+    'usd'
+);
+
+
+--
 -- Name: entity_type_enum; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -75,38 +84,6 @@ CREATE TABLE public.accounts (
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
-
-
---
--- Name: assets; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.assets (
-    id integer NOT NULL,
-    name character varying(50) NOT NULL,
-    abbrv character varying(20) NOT NULL,
-    created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
-);
-
-
---
--- Name: assets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.assets_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: assets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.assets_id_seq OWNED BY public.assets.id;
 
 
 --
@@ -155,19 +132,12 @@ CREATE TABLE public.transactions (
     account_id uuid NOT NULL,
     transaction_category text DEFAULT ''::text,
     external_transaction_id text DEFAULT ''::text,
-    external_transaction_created_at bigint DEFAULT '-1'::integer NOT NULL,
+    external_transaction_created_at bigint DEFAULT 0 NOT NULL,
     running_balance integer NOT NULL,
-    asset_id integer NOT NULL,
+    asset public.asset_enum DEFAULT 'usd'::public.asset_enum NOT NULL,
     metadata jsonb DEFAULT '{}'::jsonb,
     created_at bigint DEFAULT date_part('epoch'::text, now()) NOT NULL
 );
-
-
---
--- Name: assets id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.assets ALTER COLUMN id SET DEFAULT nextval('public.assets_id_seq'::regclass);
 
 
 --
@@ -184,22 +154,6 @@ ALTER TABLE ONLY public.accounts
 
 ALTER TABLE ONLY public.accounts
     ADD CONSTRAINT accounts_pkey PRIMARY KEY (id);
-
-
---
--- Name: assets assets_name_abbrv_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.assets
-    ADD CONSTRAINT assets_name_abbrv_key UNIQUE (name, abbrv);
-
-
---
--- Name: assets assets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.assets
-    ADD CONSTRAINT assets_pkey PRIMARY KEY (id);
 
 
 --
@@ -278,14 +232,6 @@ ALTER TABLE ONLY public.line_items
 
 ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_account_id_fkey FOREIGN KEY (account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
-
-
---
--- Name: transactions transactions_asset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_asset_id_fkey FOREIGN KEY (asset_id) REFERENCES public.assets(id) ON DELETE CASCADE;
 
 
 --
