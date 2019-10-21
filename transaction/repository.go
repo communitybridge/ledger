@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/communitybridge/ledger/gen/models"
@@ -337,6 +338,12 @@ func getRunningBalance(repo *repository, params *models.CreateTransaction) (int6
 	balance := RunningBalance{}
 	if err := row.Scan(&balance.TransactionID, &balance.CurrentRunningBalance); err != nil {
 		log.Error(err.Error(), err)
+
+		// If it's an empty result
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+
 		return 0, err
 	}
 
