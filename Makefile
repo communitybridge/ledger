@@ -29,7 +29,7 @@ validate:
 
 swagger: clean
 	mkdir gen
-	swagger -q generate server -t gen -f swagger/$(SERVICE).yaml --exclude-main -A $(SERVICE)
+	swagger -q generate server -t gen -f swagger/$(SERVICE).yaml --exclude-main -A $(SERVICE) --keep-spec-order
 
 up:
 	dbmate up
@@ -43,7 +43,7 @@ run:
 deps:
 	dep ensure -v
 
-build: deps
+build: deps lint
 	env GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o bin/$(SERVICE)
 	chmod +x bin/$(SERVICE)
 

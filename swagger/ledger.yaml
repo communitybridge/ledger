@@ -1,20 +1,11 @@
 swagger: '2.0'
 info:
+  title: Ledger API
   version: '0.2'
-  title: Ledger
-  description: API to communicate with the Ledger.
-host: localhost:3000
+  description: Ledger API to view and manipulate Transaction related data.
 basePath: /api
 schemes:
- - http
-securityDefinitions:
-  Bearer:
-    type: apiKey
-    name: Authorization
-    in: header
-    description: |
-     For accessing the API a valid JWT token must be passed in all the queries in
-     the 'Authorization' header.
+  - http
 consumes:
   - application/json
 produces:
@@ -36,7 +27,7 @@ paths:
       tags:
         - health
         
-  /balance/{project_id}:
+  /balance/{entity_id}:
     get:
       summary: Get Balance
       operationId: get_balance
@@ -44,17 +35,28 @@ paths:
         - application/json
       parameters:
         - in: path
-          name: project_id
+          name: entity_id
+          description: UUID of the entity (User, Project, Organisation)
           type: string
           required: true
+        - name: start_date
+          in: query
+          type: integer
+          description: date-time in epoch (seconds)
+          required: false
+        - name: end_date
+          in: query
+          type: integer
+          description: date-time in epoch (seconds)
+          required: false
       responses:
-        '200':
+        200:
           description: 'OK'
           schema:
             $ref: '#/definitions/balance'
-        '400':
+        400:
           $ref: '#/responses/invalid-request'
-        '404':
+        404:
           $ref: '#/responses/not-found'
       tags:
         - balance
@@ -64,15 +66,15 @@ paths:
       summary: List Transactions
       operationId: list_transactions
       parameters:
-        - $ref: '#/parameters/pageSize'
+        - $ref: '#/parameters/page_size'
         - $ref: '#/parameters/offset'
-        - $ref: '#/parameters/orderBy'
+        - $ref: '#/parameters/order_by'
       responses:
-        '200':
+        200:
           description: 'Success'
           schema:
             $ref: '#/definitions/transaction-list'
-        '400':
+        400:
           $ref: '#/responses/invalid-request'
       tags:
         - transactions
@@ -89,14 +91,37 @@ paths:
           schema:
             $ref: '#/definitions/create-transaction'
       responses:
-        '201':
+        201:
           description: 'Created'
           schema:
             $ref: '#/definitions/transaction'
-        '400':
+        400:
           $ref: '#/responses/invalid-request'
-        '409':
+        409:
           $ref: '#/responses/conflict'
+      tags:
+        - transactions
+        
+  /transactions/{transaction_id}:
+    get:
+      summary: Get Transaction
+      operationId: getTransaction
+      consumes:
+        - application/json
+      parameters:
+        - in: path
+          name: transaction_id
+          type: string
+          required: true
+      responses:
+        200:
+          description: 'OK'
+          schema:
+            $ref: '#/definitions/transaction'
+        400:
+          $ref: '#/responses/invalid-request'
+        404:
+          $ref: '#/responses/not-found'
       tags:
         - transactions
         
@@ -133,9 +158,25 @@ definitions:
         
   transaction-list:
     type: object
+    x-nullable: false
+    title: Transactions
+    description: List of Transactions
     properties:
-      Metadata:
-        $ref: '#/definitions/list-metadata'
+      total_size:
+        type: integer
+        x-omitempty: false
+        format: int64
+      page_size:
+        type: integer
+        x-omitempty: false
+        format: int64
+      offset:
+        type: integer
+        x-omitempty: false
+        format: int64
+      has_next:
+        type: boolean
+        x-omitempty: true
       Data:
         type: array
         items:
@@ -149,13 +190,17 @@ definitions:
         description: UUID of the line_item.
         readOnly: true
         example: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+      asset:
+        type: string
+        enum: [usd]
+        example: usd
       account_id:
         type: string
         description: UUID of the associated account.
         example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
       running_balance:
         type: integer
-        description: Amount of balance in cents. This value can be + or -.
+        description: Sum of transactions for this account until this time in cents. This value can be + or -.
         example: 10000
       transaction_category:
         type: string
@@ -163,16 +208,21 @@ definitions:
         type: string
         description: ID of this transaction from the external source
         example: txe0e14a-17d
+        x-omitempty: false
+      external_transaction_created_at:
+        type: integer
+        description: date-time in epoch (seconds)
+        readOnly: true
+        example: 1539815989
       metadata:
         type: string
         description: json formatted string holding dynamic data
-        example: {note: lorem ipsum}
       created_at:
         type: integer
         description: date-time in epoch (seconds)
         readOnly: true
         example: 1539815989
-      updated_at:
+      external_created_at:
         type: integer
         description: date-time in epoch (seconds)
         readOnly: true
@@ -181,7 +231,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/line-item'
-
+        
   line-item:
     type: object
     properties:
@@ -194,24 +244,23 @@ definitions:
         type: string
         description: UUID of the transaction.
         example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      external_id:
+        type: string
+        description: ID of this line_item from the external source
+        example: txe0e14a-17d
+      description:
+        type: string
+        description: Description of the item.
+        example: fee
+        x-omitempty: false
       amount:
         type: integer
         description: Amount of transaction in cents. This value can be + or -.
         example: 10000
-      asset_id:
-        type: string
-        example: 7fa530ed-10cc-452b-8aef-632bb33e7367
-        description: UUID fk to the asset table
       metadata:
         type: string
         description: json formatted string holding dynamic data
-        example: {note: lorem ipsum}
       created_at:
-        type: integer
-        description: date-time in epoch (seconds)
-        readOnly: true
-        example: 1539815989
-      updated_at:
         type: integer
         description: date-time in epoch (seconds)
         readOnly: true
@@ -219,11 +268,34 @@ definitions:
         
   create-transaction:
     type: object
+    required:
+      - entity_id
+      - entity_type
+      - external_source_type
+      - external_account_id
+      - external_transaction_id
+      - line_items
     properties:
-      account_id:
+      entity_id:
         type: string
-        description: UUID of the associated account.
+        description: UUID of the associated entity.
         example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
+      entity_type:
+        type: string
+        enum: [user, project, organisation]
+        example: user
+      external_source_type:
+        type: string
+        enum: [bill.com, stripe, expensify]
+        example: bill.com
+      external_account_id:
+        type: string
+        description: ID of the external account
+        example: stripe-17dabc
+      asset:
+        type: string
+        enum: [usd]
+        example: usd
       transaction_category:
         type: string
       external_transaction_id:
@@ -233,7 +305,6 @@ definitions:
       metadata:
         type: string
         description: json formatted string holding dynamic data
-        example: {note: lorem ipsum}
       line_items:
         type: array
         items:
@@ -241,23 +312,33 @@ definitions:
           
   create-line-item:
     type: object
+    required:
+      - amount
+      - description
     properties:
       amount:
         type: integer
         description: Amount of transaction in cents. This value can be + or -.
         example: 10000
-      asset_id:
+      description:
         type: string
-        example: 7fa530ed-10cc-452b-8aef-632bb33e7367
-        description: UUID fk to the asset table
+        description: Description of the item.
+        example: fee
+      external_id:
+        type: string
+        description: ID of this line_item from the external source
+        example: txe0e14a-17d
       metadata:
         type: string
         description: json formatted string holding dynamic data
-        example: {note: lorem ipsum}
 
-  sub_category:
+  sub-category:
     type: object
     properties:
+      name: 
+        type: string
+        description: Category name
+        example: Lorem
       balance:
         type: integer
         description: Amount in cents.
@@ -292,81 +373,61 @@ definitions:
   balance:
     type: object
     properties:
-      name: 
+      entity_id:
         type: string
-        description: Category name
-        example: Lorem
-      project_id:
-        type: string
-        description: UUID of the project.
+        description: UUID of the entity.
         example: c9e0e14a-17d2-4250-96d0-e95df41cc0c3
-      total_balance:
-        type: integer
-        description: Amount in cents.
-        example: 1503428
+      entity_type:
+        type: string
+        enum: [user, project, organisation]
+        example: project
       available_balance:
         type: integer
-        description: Available balance for the project. totalBalance - feeBalance.
+        description: Available balance for the project. total_credit - total_debit.
         example: 1488394
-      fee_balance:
+        x-omitempty: false
+      total_count:
         type: integer
-        description: Total unpaid fees.
-        example: 15034
+        description: Total transaction count.
+        example:
+          min:
+            value: 0
+        x-omitempty: false
       total_credit:
         type: integer
         description: Total credit to project.
         example: 2503428
-      total_debit:
-        type: integer
-        description: Total debit from project.
-        example: -1000000
-      total_count:
-        type: integer
-        description: Credit transaction count.
-        example:
-          min:
-            value: 0
+        x-omitempty: false
       credit_count:
         type: integer
         description: Credit transaction count.
         example:
           min:
             value: 0
+        x-omitempty: false
+      total_debit:
+        type: integer
+        description: Total debit from project.
+        example: -1000000
+        x-omitempty: false
       debit_count:
         type: integer
         description: Debit transaction count.
         example:
           min:
             value: 0
+        x-omitempty: false
       backers:
         type: integer
         description: Total backers for the project.
         example:
           min:
             value: 0
-      subTotals:
-        properties:
-          categories:
-            type: array
-            items:
-              $ref: '#/definitions/transaction'
-
-  list-metadata:
-    type: object
-    title: List Metadata
-    properties:
-      TotalSize:
-        type: integer
         x-omitempty: false
-        format: int64
-      PageSize:
-        type: integer
-        x-omitempty: false
-        format: int64
-      Offset:
-        type: integer
-        x-omitempty: false
-        format: int64
+      sub_totals:
+        type: array
+        items:
+          $ref: '#/definitions/sub-category'
         
   error-response:
     type: object
@@ -379,18 +440,20 @@ definitions:
         type: string
         
 parameters:
-  pageSize:
-    name: pageSize
+  page_size:
+    name: page_size
     in: query
-    type: string
-    default: '100'
+    type: integer
+    default: 10
+    minimum: 1
+    maximum: 100
   offset:
     name: offset
     in: query
-    type: string
-    default: '0'
-  orderBy:
-    name: orderBy
+    type: integer
+    default: 0
+  order_by:
+    name: order_by
     in: query
     type: string
     default: 'createddate'
