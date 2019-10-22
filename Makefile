@@ -33,11 +33,11 @@ swagger: clean
 
 up:
 	dbmate up
+	
+test: 
+	# Set up test database
+	./db/migration_testdb.sh
 
-seed:
-	./db/migration.sh
-
-test: seed
 	go test `go list ./... | grep -v node_modules`
 
 run:

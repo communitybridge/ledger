@@ -1,13 +1,13 @@
 package api
 
 import (
-	"log"
 	"os"
 
 	"github.com/communitybridge/ledger/balance"
 	"github.com/communitybridge/ledger/gen/restapi"
 	"github.com/communitybridge/ledger/gen/restapi/operations"
 	"github.com/communitybridge/ledger/health"
+	log "github.com/communitybridge/ledger/logging"
 	"github.com/communitybridge/ledger/transaction"
 	"github.com/go-openapi/loads"
 	"github.com/jmoiron/sqlx"

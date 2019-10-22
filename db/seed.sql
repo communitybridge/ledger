@@ -13,8 +13,8 @@ ca13775e-6134-477c-84f2-d0568ff66849	b582a786-48ec-469b-b655-17cf779b9ce1	projec
 --
 
 COPY public.accounts (id, external_source_type, entity_id, external_account_id, created_at) FROM stdin;
-5701249e-f33a-45a3-8722-e6917ccff6f0	bill.com	b582a786-48ec-469b-b655-17cf779b9ce1	12345667	1543509959
-6eae6bb8-f7fb-425a-8af8-64adb616b739	bill.com	1e04d5a3-a4bb-4bd8-b61a-bee83a4b57e2	87654323	1543509959
+5701249e-f33a-45a3-8722-e6917ccff6f0	bill.com	ca13775e-6134-477c-84f2-d0568ff66849	12345667	1543509959
+6eae6bb8-f7fb-425a-8af8-64adb616b739	bill.com	3cf072df-8f92-4a18-863a-468c084bee73	87654323	1543509959
 \.
 
 --
