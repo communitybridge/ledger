@@ -4,7 +4,13 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.12.10-buster-node
+        - image: circleci/golang:1.12.10-buster-node
+        - image: circleci/postgres:9.5
+          environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: ledger_test
+
     working_directory: /go/src/github.com/communitybridge/ledger/
     steps:
       - checkout
