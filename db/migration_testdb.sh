@@ -14,22 +14,22 @@ dbmate -e "TEST_DATABASE_URL" up
 
 echo "Migration finished"
 
-# echo "Seeding started"
-# echo $TEST_DATABASE_HOST
+echo "Seeding started"
+echo $TEST_DATABASE_HOST
 
-# export PGPASSWORD=$TEST_DATABASE_PASSWORD
+export PGPASSWORD=$TEST_DATABASE_PASSWORD
 
-# psql \
-#     -X \
-#     -U $TEST_DATABASE_USERNAME \
-#     -h $TEST_DATABASE_HOST \
-#     -w \
-#     -a \
-#     -f ./db/seed.sql \
-#     --echo-all \
-#     --single-transaction \
-#     --set AUTOCOMMIT=off \
-#     --set ON_ERROR_STOP=on \
-#     $TEST_DATABASE_NAME
+psql \
+    -X \
+    -U $TEST_DATABASE_USERNAME \
+    -h $TEST_DATABASE_HOST \
+    -w \
+    -a \
+    -f ./db/seed.sql \
+    --echo-all \
+    --single-transaction \
+    --set AUTOCOMMIT=off \
+    --set ON_ERROR_STOP=on \
+    $TEST_DATABASE_NAME
 
-# echo "seed script successful"
+echo "seed script successful"

@@ -57,7 +57,7 @@ func TransactionErrorHandler(label string, err error) middleware.Responder {
 	case ErrDuplicate.Error():
 		return transactions.NewCreateTransactionConflict().WithPayload(ErrorResponse(err))
 	case ErrNotFound.Error():
-		return transactions.NewListTransactionsBadRequest().WithPayload(ErrorResponse(err))
+		return transactions.NewGetTransactionNotFound().WithPayload(ErrorResponse(err))
 	default:
 		return transactions.NewCreateTransactionBadRequest().WithPayload(ErrorResponse(err))
 	}
