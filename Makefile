@@ -15,6 +15,7 @@ setup_dev:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get -u github.com/golang/dep/cmd/dep	
 	sudo curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.7.0/dbmate-linux-amd64
+	sudo chmod +x /usr/local/bin/dbmate
 
 setup_deploy:
 	yarn install --frozen-lockfile
