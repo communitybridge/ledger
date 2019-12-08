@@ -20,3 +20,15 @@ Please see [database doc](db/README.md).
 Documentation is available at `/api/docs`.
 
 Also see [swagger doc](swagger/ledger.yaml).
+
+## Set Up
+cp .env-example to .env and edit with the correct values
+
+source .env
+make setup_dev
+make up
+make swagger
+make run
+
+Then go to: http://localhost:8080/api/health
+
