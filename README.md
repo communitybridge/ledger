@@ -30,5 +30,6 @@ make up
 make swagger
 make run
 
-Then go to: http://localhost:8080/api/health
+Then go to: http://localhost:8080/api/health to test the simplest endpoint.
 
+Find more endpoints at http://localhost:8080/api/docs created by swagger/ledger.yaml
