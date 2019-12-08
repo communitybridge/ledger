@@ -32,7 +32,9 @@ func initDB() (*sqlx.DB, error) {
 	log.Println("Initializing DB")
 
 	db, err := sqlx.Connect("postgres", os.Getenv("DATABASE_URL"))
+	
 	if err != nil {
+		log.Fatal( os.Getenv("DATABASE_URL") )
 		log.Fatal("err", err)
 		return nil, err
 	}
