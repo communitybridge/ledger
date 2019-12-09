@@ -20,3 +20,19 @@ Please see [database doc](db/README.md).
 Documentation is available at `/api/docs`.
 
 Also see [swagger doc](swagger/ledger.yaml).
+
+## Set Up Local Dev Instance
+
+in $GOPATH/src/github.com, git clone this package to /communitybridge/ledger.  You must be working from $GOPATH/src/github.com/communitybridge/ledger
+
+cp .env-example to .env and edit with the correct values
+
+- source .env
+- make setup_dev
+- make up
+- make build
+- make run
+
+Then go to: http://localhost:8080/api/health to test the simplest endpoint.
+
+Find more endpoints at http://localhost:8080/api/docs created by swagger/ledger.yaml

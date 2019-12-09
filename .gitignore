@@ -1,4 +1,7 @@
 
+### Environmental variables for local development ###
+.env
+
 ### Code ###
 # Visual Studio Code - https://code.visualstudio.com/
 .settings/
