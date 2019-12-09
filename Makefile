@@ -14,11 +14,6 @@ GO_FILES=$(shell find . -type f -name '*.go' -not -path './vendor/*')
 setup_dev:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get -u github.com/golang/dep/cmd/dep	
-	go get -u github.com/sirupsen/logrus
-	go get -u github.com/pkg/errors
-	go get -u github.com/lib/pq
-	go get -u github.com/jmoiron/sqlx/types
-	go get -u github.com/docker/go-units
 	sudo curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.7.0/dbmate-linux-amd64
 	sudo chmod +x /usr/local/bin/dbmate
 
@@ -49,7 +44,7 @@ run:
 deps:
 	dep ensure -v
 
-build: deps lint
+build: deps lint swagger
 	env GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o bin/$(SERVICE)
 	chmod +x bin/$(SERVICE)
 

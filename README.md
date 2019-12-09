@@ -30,7 +30,7 @@ cp .env-example to .env and edit with the correct values
 - source .env
 - make setup_dev
 - make up
-- make swagger
+- make build
 - make run
 
 Then go to: http://localhost:8080/api/health to test the simplest endpoint.
