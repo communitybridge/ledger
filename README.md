@@ -21,7 +21,10 @@ Documentation is available at `/api/docs`.
 
 Also see [swagger doc](swagger/ledger.yaml).
 
-## Set Up
+## Set Up Local Dev Instance
+
+in $GOPATH/src/github.com, git clone this package to /communitybridge/ledger.  You must be working from $GOPATH/src/github.com/communitybridge/ledger
+
 cp .env-example to .env and edit with the correct values
 
 - source .env
