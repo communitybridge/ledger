@@ -14,19 +14,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	transactionID         = "61b0c143-f1f9-457d-a889-80570b820348"
-	accountID             = "5701249e-f33a-45a3-8722-e6917ccff6f0"
-	asset                 = "usd"
-	externalTransactionID = "a04c291f-234567"
-)
-
 func TestTransactionGetByID(t *testing.T) {
 	fmt.Println(os.Getenv("DATABASE_URL"))
 	conn, err := sqlx.Connect("postgres", os.Getenv("DATABASE_URL"))
 	require.Nil(t, err)
 	defer conn.Close()
 	prepareTestDatabase()
+
+	transactionID := "61b0c143-f1f9-457d-a889-80570b820348"
+	accountID := "5701249e-f33a-45a3-8722-e6917ccff6f0"
+	asset := "usd"
+	externalTransactionID := "a04c291f-234567"
 
 	transactionRepository := NewRepository(conn)
 	transaction, err := transactionRepository.GetTransaction(context.Background(), transactionID)
@@ -82,8 +80,9 @@ func TestTransactionCreateTransaction(t *testing.T) {
 	entityID := "b582a786-48ec-469b-b655-17cf779b9ce1"
 	entityType := "project"
 	externalSourceType := "bill.com"
-	transactionCategory := "donation"
+	transactionCategory := "unknown"
 	exAccountID := "exaccountid1234"
+	asset := "usd"
 
 	// transaction line item data
 	lineItemAmountOne := int64(1500)
@@ -104,7 +103,7 @@ func TestTransactionCreateTransaction(t *testing.T) {
 	createTransaction.EntityID = &entityID
 	createTransaction.EntityType = &entityType
 	createTransaction.ExternalTransactionID = &exAccountID
-	createTransaction.Asset = "usd"
+	createTransaction.Asset = asset
 	createTransaction.ExternalSourceType = &externalSourceType
 	createTransaction.TransactionCategory = transactionCategory
 	createTransaction.ExternalAccountID = &exAccountID
