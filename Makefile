@@ -35,7 +35,7 @@ swagger: clean
 up:
 	dbmate up
 	
-test: 
+test: up 
 	go test -p 1 -race -cover ./...
 
 run:
