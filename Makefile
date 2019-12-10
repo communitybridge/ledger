@@ -35,10 +35,7 @@ up:
 	dbmate up
 	
 test: 
-	# Set up test database
-	./db/migration_testdb.sh
-
-	go test `go list ./... | grep -v node_modules`
+	go test -p 1 -race -cover ./...
 
 run:
 	go run main.go
@@ -46,7 +43,7 @@ run:
 deps:
 	dep ensure -v
 
-build: deps lint
+build: swagger deps lint
 	env GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o bin/$(SERVICE)
 	chmod +x bin/$(SERVICE)
 
