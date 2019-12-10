@@ -1,0 +1,12 @@
+- created_at: 1543509959
+  entity_id: b582a786-48ec-469b-b655-17cf779b9ce1
+  external_account_id: "12345667"
+  external_source_type: bill.com
+  id: 5701249e-f33a-45a3-8722-e6917ccff6f0
+  metadata: '{}'
+- created_at: 1543509959
+  entity_id: 1e04d5a3-a4bb-4bd8-b61a-bee83a4b57e2
+  external_account_id: "87654323"
+  external_source_type: stripe
+  id: 6eae6bb8-f7fb-425a-8af8-64adb616b739
+  metadata: '{}'

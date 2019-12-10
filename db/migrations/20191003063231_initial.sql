@@ -29,7 +29,7 @@ create table entities
     created_at int8 NOT NULL DEFAULT extract(epoch from now()),
 
     PRIMARY KEY(id),
-    UNIQUE (entity_id)
+    UNIQUE (entity_id, entity_type)
 );
 
 create table accounts
@@ -37,7 +37,7 @@ create table accounts
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     external_source_type source_type_enum NOT NULL,
     external_account_id text NOT NULL,
-    entity_id uuid NOT NULL REFERENCES entities(entity_id) ON DELETE CASCADE,
+    entity_id uuid NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
     metadata jsonb NOT NULL DEFAULT '{}',
 
     created_at int8 NOT NULL DEFAULT extract(epoch from now()),

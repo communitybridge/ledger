@@ -157,11 +157,11 @@ ALTER TABLE ONLY public.accounts
 
 
 --
--- Name: entities entities_entity_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: entities entities_entity_id_entity_type_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.entities
-    ADD CONSTRAINT entities_entity_id_key UNIQUE (entity_id);
+    ADD CONSTRAINT entities_entity_id_entity_type_key UNIQUE (entity_id, entity_type);
 
 
 --
@@ -215,7 +215,7 @@ CREATE INDEX idx_external_account_id ON public.accounts USING btree (external_ac
 --
 
 ALTER TABLE ONLY public.accounts
-    ADD CONSTRAINT accounts_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES public.entities(entity_id) ON DELETE CASCADE;
+    ADD CONSTRAINT accounts_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES public.entities(id) ON DELETE CASCADE;
 
 
 --
