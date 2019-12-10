@@ -14,6 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	asset = "usd"
+)
+
 func TestTransactionGetByID(t *testing.T) {
 	fmt.Println(os.Getenv("DATABASE_URL"))
 	conn, err := sqlx.Connect("postgres", os.Getenv("DATABASE_URL"))
@@ -23,7 +27,6 @@ func TestTransactionGetByID(t *testing.T) {
 
 	transactionID := "61b0c143-f1f9-457d-a889-80570b820348"
 	accountID := "5701249e-f33a-45a3-8722-e6917ccff6f0"
-	asset := "usd"
 	externalTransactionID := "a04c291f-234567"
 
 	transactionRepository := NewRepository(conn)
@@ -82,7 +85,6 @@ func TestTransactionCreateTransaction(t *testing.T) {
 	externalSourceType := "bill.com"
 	transactionCategory := "unknown"
 	exAccountID := "exaccountid1234"
-	asset := "usd"
 
 	// transaction line item data
 	lineItemAmountOne := int64(1500)

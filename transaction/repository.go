@@ -477,10 +477,10 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 
 	// Set asset to usd default,
 	// allow for optional asset provided via param
-	asset := "usd"
-	if params.Asset != "" {
-		asset = params.Asset
-	}
+	// asset := ""
+	// if params.Asset != "" {
+	// 	asset = params.Asset
+	// }
 
 	// Create a new transaction entry
 	sql := `
@@ -507,7 +507,7 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
 		&params.TransactionCategory,
 		params.ExternalTransactionID,
-		asset,
+		params.Asset,
 		accountID,
 		runningBalanceValue,
 		params.Metadata,
@@ -530,7 +530,7 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	row := tx.QueryRowx(sql,
 		&params.TransactionCategory,
 		params.ExternalTransactionID,
-		asset,
+		params.Asset,
 		accountID,
 		runningBalanceValue,
 		metaDataJSONValue,
