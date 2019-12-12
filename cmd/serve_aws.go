@@ -12,7 +12,7 @@ import (
 func Start(api *operations.LedgerAPI, _ int) error {
 	adapter := httpadapter.New(api.Serve(nil))
 
-	logrus.Debug("Starting Lambda")
+	logrus.Info("Starting Lambda")
 	lambda.Start(adapter.Proxy)
 	return nil
 }
