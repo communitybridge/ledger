@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 
 	"github.com/communitybridge/ledger/balance"
+	log "github.com/communitybridge/ledger/logging"
 
 	"github.com/communitybridge/ledger/cmd"
 	"github.com/communitybridge/ledger/gen/restapi"
@@ -29,7 +29,7 @@ var (
 
 // initDB
 func initDB() (*sqlx.DB, error) {
-	log.Println("Initializing DB")
+	log.Info("Initializing DB")
 
 	db, err := sqlx.Connect("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
@@ -97,6 +97,7 @@ func main() {
 	var portFlag = flag.Int("port", viperConfig.GetInt("PORT"), "Port to listen for web requests on")
 	flag.Parse()
 
+	log.Info("Starting cbledger")
 	if err := cmd.Start(api, *portFlag); err != nil {
 		logrus.Panicln(err)
 	}
