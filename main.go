@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 
 	"github.com/communitybridge/ledger/api"
 	"github.com/communitybridge/ledger/cmd"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -46,16 +46,18 @@ func main() {
 	}
 
 	// DB setup
-	pDB, err := api.InitDB()
+	pDB, err := sqlx.Connect("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Fatal("couldn't connect to database", err)
+		logrus.Fatal("err", err)
 	}
+	pDB.SetMaxOpenConns(3)
 
 	api := api.ConfigureAPI(pDB)
 
 	var portFlag = flag.Int("port", viperConfig.GetInt("PORT"), "Port to listen for web requests on")
 	flag.Parse()
 
+	logrus.Info("Start Service")
 	if err := cmd.Start(api, *portFlag); err != nil {
 		logrus.Panicln(err)
 	}
