@@ -36,12 +36,12 @@ func (repo *repository) GetDB() *sqlx.DB {
 
 // DoesEntityExist checks if a given entity exists in the entities table
 func DoesEntityExist(repo *repository, id string) (bool, string) {
-	log.Info("entered function DoesProjectExist")
+	log.Info("entered function DoesEntityExist")
 
 	var res = ""
 	err := repo.db.Get(&res, "SELECT id FROM entities WHERE entity_id=$1", id)
 	if err != nil {
-		err = fmt.Errorf("project with id : `%s` does not exist", id)
+		err = fmt.Errorf("entity with id : `%s` does not exist", id)
 		log.Info(err.Error())
 		return false, res
 	}
@@ -59,7 +59,6 @@ func (repo *repository) GetEntityBalance(ctx context.Context, params *balance.Ge
 	}
 
 	currentTime := time.Now().Unix()
-
 	endDate := int64(0)
 	if params.EndDate != nil {
 		endDate = *params.EndDate
@@ -78,12 +77,12 @@ func (repo *repository) GetEntityBalance(ctx context.Context, params *balance.Ge
 		SELECT
 			e.entity_id AS EntityID,
 			e.entity_type AS EntityType,
-			DebitCount,
-			TotalDebit,
-			CreditCount,
-			TotalCredit
+			sum(DebitCount) AS SumDebitCount,
+			sum(TotalDebit) AS SumTotalDebit,
+			sum(CreditCount) AS SumCreditCount,
+			sum(TotalCredit) AS SumTotalCredit
 		FROM entities e
-		LEFT JOIN accounts on accounts.entity_id = e.entity_id
+		LEFT JOIN accounts on accounts.entity_id = e.id
 		LEFT JOIN transactions on transactions.account_id = accounts.id
 		LEFT JOIN (
 			SELECT transaction_id,
@@ -95,7 +94,7 @@ func (repo *repository) GetEntityBalance(ctx context.Context, params *balance.Ge
 			group by transaction_id) as l on l.transaction_id = transactions.id
 		WHERE
 			e.entity_id = $1 AND transactions.created_at >= $2 AND transactions.created_at <= $3
-		group by EntityID, EntityType, DebitCount, TotalDebit, CreditCount, TotalCredit;`
+		GROUP BY EntityID, EntityType;`
 
 	log.Info(log.StripSpecialChars(query))
 

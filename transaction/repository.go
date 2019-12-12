@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/communitybridge/ledger/gen/models"
@@ -37,21 +38,6 @@ func (repo *repository) GetDB() *sqlx.DB {
 	return repo.db
 }
 
-// DoesEntityExist checks if a given account exists
-func DoesEntityExist(repo *repository, entityID string, entityType string) bool {
-	log.Info("entered function DoesEntityExist")
-
-	var res = ""
-	err := repo.db.Get(&res, "SELECT id FROM entities WHERE entity_id=$1 AND entity_type=$2", entityID, entityType)
-	if err != nil {
-		err = fmt.Errorf("entity with id: `%s` and type: '%s' does not exist", entityID, entityType)
-		log.Info(err.Error())
-		return false
-	}
-
-	return true
-}
-
 // DoesTransactionExist checks if a given transaction exists
 func DoesTransactionExist(repo *repository, id string) (bool, string) {
 	log.Info("entered function DoesTransactionExist")
@@ -71,6 +57,14 @@ func DoesTransactionExist(repo *repository, id string) (bool, string) {
 func CreateAccount(repo *repository, params *models.CreateTransaction) (string, error) {
 	log.Info("entered function CreateAccount")
 
+	// Get entity.id from entity.entity_id
+	entityID := GetExistingEntity(repo, *params.EntityID, *params.EntityType)
+	if entityID == "" {
+		err := errors.New(fmt.Sprintf("could not get entity.id for entity.entity_id: %s entity.entity_type: %s", *params.EntityID, *params.EntityType))
+		log.Error(err.Error(), err)
+		return "", err
+	}
+
 	sql := `
 	INSERT INTO accounts (entity_id, external_source_type, external_account_id)
 		VALUES ($1, $2, $3)
@@ -78,13 +72,13 @@ func CreateAccount(repo *repository, params *models.CreateTransaction) (string, 
 	RETURNING id;`
 
 	log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
-		params.EntityID,
+		entityID,
 		params.ExternalSourceType,
 		params.ExternalAccountID))
 
 	// Insert Statement
 	row := repo.db.QueryRowx(sql,
-		params.EntityID,
+		entityID,
 		params.ExternalSourceType,
 		params.ExternalAccountID,
 	)
@@ -100,9 +94,65 @@ func CreateAccount(repo *repository, params *models.CreateTransaction) (string, 
 	return accountID, nil
 }
 
+// CreateEntity creates a new entity
+func CreateEntity(repo *repository, params *models.CreateTransaction) (string, error) {
+	log.Info("entered function CreateEntity")
+
+	sql := `
+	INSERT INTO entities (entity_id, entity_type)
+		VALUES ($1, $2)
+	ON CONFLICT DO NOTHING
+	RETURNING id;`
+
+	log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
+		params.EntityID,
+		params.EntityType))
+
+	// Insert Statement
+	row := repo.db.QueryRowx(sql,
+		params.EntityID,
+		params.EntityType,
+	)
+
+	var entityID = ""
+	if err := row.Scan(&entityID); err != nil {
+		log.Error(log.Trace(), err)
+		return "", err
+	}
+
+	log.Info(fmt.Sprintf("added entity with ID %s to table", entityID))
+
+	return entityID, nil
+}
+
+// GetExistingEntity checks if a given entity exists and returns the entity.id
+func GetExistingEntity(repo *repository, entityEntityID string, entityType string) string {
+	log.Info("entered function GetExistingEntity")
+
+	var entityID = ""
+	err := repo.db.Get(&entityID,
+		`SELECT id FROM entities WHERE entity_id=$1 AND entity_type=$2`,
+		entityEntityID, entityType)
+	if err != nil {
+		err = fmt.Errorf(`entity with entity_id: %s, entity_type: %s does not exist`,
+			entityEntityID, entityType)
+		log.Info(err.Error())
+	}
+
+	return entityID
+}
+
 // GetExistingAccount checks if a given account exists and returns the account ID
 func GetExistingAccount(repo *repository, params *models.CreateTransaction) string {
 	log.Info("entered function GetExistingAccount")
+
+	// Check if entity exists
+	entityID := GetExistingEntity(repo, *params.EntityID, *params.EntityType)
+	if entityID == "" {
+		err := errors.New(fmt.Sprintf("could not get entity.id for entity.entity_id: %s entity.entity_type: %s", *params.EntityID, *params.EntityType))
+		log.Error(err.Error(), err)
+		return ""
+	}
 
 	var accountID = ""
 	err := repo.db.Get(&accountID,
@@ -111,14 +161,35 @@ func GetExistingAccount(repo *repository, params *models.CreateTransaction) stri
 		WHERE entity_id=$1 
 		AND external_source_type=$2
 		AND external_account_id=$3`,
-		params.EntityID, params.ExternalSourceType, params.ExternalAccountID)
+		entityID, params.ExternalSourceType, params.ExternalAccountID)
 	if err != nil {
 		err = fmt.Errorf(`account with entity_id: %s, external_source_type: %s, external_account_id: %s does not exist`,
-			*params.EntityID, *params.ExternalSourceType, *params.ExternalAccountID)
+			entityID, *params.ExternalSourceType, *params.ExternalAccountID)
 		log.Info(err.Error())
 	}
 
 	return accountID
+}
+
+// HandleEntity checks if a given entity exists and returns the entity.id
+// If it does not exist it creates the entity and returns the new entity.id
+func HandleEntity(repo *repository, params *models.CreateTransaction) (string, error) {
+
+	// Check if entity exists
+	entityID := GetExistingEntity(repo, *params.EntityID, *params.EntityType)
+	if entityID != "" {
+		log.Info(fmt.Sprintf("entity with entity_id: %s and entity_type: %s exists", *params.EntityID, *params.EntityType))
+		return entityID, nil
+	}
+
+	// Else, create a new one.
+	entityID, err := CreateEntity(repo, params)
+	if err != nil {
+		log.Error(log.Trace(), err)
+		return "", err
+	}
+
+	return entityID, nil
 }
 
 // HandleAccount checks if a given account exists and returns the account ID
@@ -319,6 +390,14 @@ func (repo *repository) GetTransaction(ctx context.Context, transactionID string
 func getRunningBalance(repo *repository, params *models.CreateTransaction) (int64, error) {
 	log.Info("entered function getRunningBalance")
 
+	// Get the entity.id from the entity.entity_id
+	entityID := GetExistingEntity(repo, *params.EntityID, *params.EntityType)
+	if entityID == "" {
+		err := errors.New(fmt.Sprintf("could not get entity.id for entity.entity_id: %s entity.entity_type: %s", *params.EntityID, *params.EntityType))
+		log.Error(err.Error(), err)
+		return 0, err
+	}
+
 	query := `
 		SELECT
 			t.id,
@@ -332,11 +411,17 @@ func getRunningBalance(repo *repository, params *models.CreateTransaction) (int6
 
 	log.Info(log.StripSpecialChars(query))
 
-	row := repo.db.QueryRowx(query, params.EntityID, params.ExternalSourceType, params.ExternalAccountID)
+	row := repo.db.QueryRowx(query, entityID, params.ExternalSourceType, params.ExternalAccountID)
 
 	balance := RunningBalance{}
 	if err := row.Scan(&balance.TransactionID, &balance.CurrentRunningBalance); err != nil {
 		log.Error(err.Error(), err)
+
+		// If it's an empty result
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+
 		return 0, err
 	}
 
@@ -366,9 +451,8 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	log.Info("entered function CreateTransaction")
 
 	// Check if entity exists
-	entityExist := DoesEntityExist(repo, *params.EntityID, *params.EntityType)
-	if !entityExist {
-		err := fmt.Errorf("invalid entity ID: %s or Type: %s", *params.EntityID, *params.EntityType)
+	_, err := HandleEntity(repo, params)
+	if err != nil {
 		log.Error(log.Trace(), err)
 		return nil, err
 	}
@@ -393,10 +477,10 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 
 	// Set asset to usd default,
 	// allow for optional asset provided via param
-	asset := "usd"
-	if params.Asset != "" {
-		asset = params.Asset
-	}
+	// asset := ""
+	// if params.Asset != "" {
+	// 	asset = params.Asset
+	// }
 
 	// Create a new transaction entry
 	sql := `
@@ -423,7 +507,7 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	log.Info(fmt.Sprintf(log.StripSpecialChars(sql),
 		&params.TransactionCategory,
 		params.ExternalTransactionID,
-		asset,
+		params.Asset,
 		accountID,
 		runningBalanceValue,
 		params.Metadata,
@@ -446,7 +530,7 @@ func (repo *repository) CreateTransaction(ctx context.Context, params *models.Cr
 	row := tx.QueryRowx(sql,
 		&params.TransactionCategory,
 		params.ExternalTransactionID,
-		asset,
+		params.Asset,
 		accountID,
 		runningBalanceValue,
 		metaDataJSONValue,

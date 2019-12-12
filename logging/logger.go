@@ -28,6 +28,11 @@ func init() {
 	}
 }
 
+// SetLogLevel manually override loglevel
+func SetLogLevel(level int) {
+	logger.SetLevel(logrus.FatalLevel)
+}
+
 // WithField overrides equivalent logrus's func
 func WithField(key string, value interface{}) *logrus.Entry {
 	return logger.WithField(key, value)

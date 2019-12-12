@@ -34,9 +34,9 @@ swagger: clean
 
 up:
 	dbmate up
-
-test:
-	go test `go list ./... | grep -v node_modules`
+	
+test: up 
+	go test -p 1 -race -cover ./...
 
 run:
 	go run main.go
@@ -44,7 +44,7 @@ run:
 deps:
 	dep ensure -v
 
-build: swagger deps lint 
+build: swagger deps lint
 	env GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o bin/$(SERVICE)
 	chmod +x bin/$(SERVICE)
 
