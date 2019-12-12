@@ -14,7 +14,7 @@ func init() {
 
 	// Only log the warning severity or above.
 	// Default log level
-	logger.SetLevel(logrus.InfoLevel)
+	logger.SetLevel(logrus.DebugLevel)
 
 	EnvLogLevel := os.Getenv("LOG_LEVEL")
 	if EnvLogLevel == "debug" {
