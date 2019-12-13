@@ -45,8 +45,7 @@ deps:
 	dep ensure -v
 
 build: swagger deps lint
-	env GOOS=linux go build -tags aws_lambda -o bin/$(SERVICE) -a -ldflags "-s -w -extldflags '-static' -X main.BuildStamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X main.GitHash=`git rev-parse HEAD`" .
-
+	env GOOS=linux GOARCH=amd64 go build -tags aws_lambda -o bin/$(SERVICE) -a $(LDFLAGS) .
 	chmod +x bin/$(SERVICE)
 
 $(LINT_TOOL):
