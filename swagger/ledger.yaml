@@ -27,6 +27,18 @@ paths:
       tags:
         - health
         
+  /api-docs:
+    get:
+      summary: Get swagger documentation
+      operationId: get_doc
+      produces:
+        - text/html
+      responses:
+        200:
+          description: Success
+      tags:
+        - docs
+
   /balance/{entity_id}:
     get:
       summary: Get Balance
