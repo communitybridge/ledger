@@ -1,8 +1,6 @@
 package api
 
 import (
-	"os"
-
 	"github.com/communitybridge/ledger/balance"
 	"github.com/communitybridge/ledger/gen/restapi"
 	"github.com/communitybridge/ledger/gen/restapi/operations"
@@ -20,20 +18,6 @@ var (
 	// GitHash is the tag for current hash the build represents
 	GitHash = "None"
 )
-
-// InitDB ...
-func InitDB() (*sqlx.DB, error) {
-	log.Println("Initializing DB")
-
-	db, err := sqlx.Connect("postgres", os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatal("err", err)
-		return nil, err
-	}
-	db.SetMaxOpenConns(2)
-
-	return db, nil
-}
 
 // ConfigureAPI ...
 func ConfigureAPI(pDB *sqlx.DB) *operations.LedgerAPI {

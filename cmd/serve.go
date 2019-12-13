@@ -3,10 +3,9 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/communitybridge/ledger/gen/restapi"
 	"github.com/communitybridge/ledger/gen/restapi/operations"
+	log "github.com/communitybridge/ledger/logging"
 )
 
 // Start the API server
@@ -20,6 +19,7 @@ func Start(api *operations.LedgerAPI, portFlag int) error {
 		}
 	}()
 
+	log.Info("Starting Standard")
 	server.Port = portFlag
 	return server.Serve()
 }
