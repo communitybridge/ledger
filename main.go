@@ -7,6 +7,7 @@ import (
 
 	"github.com/communitybridge/ledger/balance"
 	"github.com/communitybridge/ledger/cmd"
+	"github.com/communitybridge/ledger/docs"
 	"github.com/communitybridge/ledger/gen/restapi"
 	"github.com/communitybridge/ledger/gen/restapi/operations"
 	"github.com/communitybridge/ledger/health"
@@ -64,6 +65,8 @@ func main() {
 		log.Fatal("Invalid swagger file for initializing", err)
 	}
 	api := operations.NewLedgerAPI(swaggerSpec)
+
+	docs.Configure(api)
 
 	// Health setup
 	healthService := health.New()
