@@ -26,11 +26,12 @@ paths:
           $ref: '#/responses/not-found'
       tags:
         - health
-        
+
   /api-docs:
     get:
+      security: []
       summary: Get swagger documentation
-      operationId: get_doc
+      operationId: getDoc
       produces:
         - text/html
       responses:
