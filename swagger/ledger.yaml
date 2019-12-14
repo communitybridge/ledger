@@ -38,7 +38,7 @@ paths:
         200:
           description: Success
       tags:
-        - docs
+        - doc
 
   /balance/{entity_id}:
     get:
