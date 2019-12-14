@@ -38,7 +38,7 @@ func (o *GetDocOK) WriteResponse(rw http.ResponseWriter, producer runtime.Produc
 		</style>
 	  </head>
 	  <body>
-		<redoc spec-url='/cbledger/swagger.json'></redoc>
+		<redoc spec-url='/v1/swagger.json'></redoc>
 		<script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
 	  </body>
 	</html>`
