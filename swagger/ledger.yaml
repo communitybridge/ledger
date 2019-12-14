@@ -40,20 +40,6 @@ paths:
       tags:
         - docs
 
-  /swagger.json:
-    get:
-      security: []
-      summary: Get swagger JSON
-      description: Returns the swagger specification as a JSON document.
-      operationId: getSwagger
-      produces:
-        - application/json
-      responses:
-        200:
-          description: Success
-      tags:
-        - docs
-
   /balance/{entity_id}:
     get:
       summary: Get Balance

@@ -11,6 +11,10 @@ import (
 // Configure setups handlers on api with Service
 func Configure(api *operations.LedgerAPI, service Service) {
 
+	api.DocGetDocHandler = doc.GetDocHandlerFunc(func(params doc.GetDocParams) middleware.Responder {
+		return NewGetDocOK()
+	})
+	
 	api.HealthGetHealthHandler = health.GetHealthHandlerFunc(func(params health.GetHealthParams) middleware.Responder {
 		log.Info("entered GetHealthHandler")
 		result, err := service.GetHealth(params.HTTPRequest.Context())
