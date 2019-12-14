@@ -1,9 +1,9 @@
 swagger: '2.0'
 info:
   title: Ledger API
-  version: '0.2'
+  version: '2.0'
   description: Ledger API to view and manipulate Transaction related data.
-basePath: /api
+basePath: /v2
 schemes:
   - http
 consumes:
@@ -31,7 +31,7 @@ paths:
     get:
       security: []
       summary: Get swagger documentation
-      operationId: getDoc
+      operationId: get_doc
       produces:
         - text/html
       responses:

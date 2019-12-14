@@ -17,9 +17,14 @@ database migration tool.
 Please see [database doc](db/README.md).
 
 ## Swagger
-Documentation is available at `/api/docs`.
+Documentation is available at `/docs`.
 
 Also see [swagger doc](swagger/ledger.yaml).
+
+## Testing
+Test's are run against a real database instance and is accessed through the `DATABASE_URL` environment variable. 
+
+e.g. `DATABASE_URL="postgresql://$DATABASE_USERNAME:$DATABASE_PASSWORD@$DATABASE_HOST/ledger_test?sslmode=disable"
 
 ## Set Up Local Dev Instance
 
